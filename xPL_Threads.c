@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include "../xPL.h"
-#include "./sqlite/sqlite3.h"
+//#include "./sqlite/sqlite3.h"
 
 #define CLOCK_VERSION "1.0"
 
@@ -15,7 +15,7 @@ static xPL_ServicePtr clockService = NULL;
 static xPL_MessagePtr clockTickMessage = NULL;
 
 pthread_t th_clock, th_event_mill;
-sqlite3 *db;
+//sqlite3 *db;
 
 typedef enum
 { TIME, MESSAGE, CONFIG } EVENT_TYPE;
@@ -58,9 +58,9 @@ int eventStack_add (EVENT *evt)
 {
     int i = 0;
     
-    i = (unsigned int)(events_buffer.head + 1) % EVENTS_BUFFER_SIZE;
+    i = (events_buffer.head + 1) % EVENTS_BUFFER_SIZE;
     
-    if (i = events_buffer.tail)
+    if (i == events_buffer.tail)
     {
         fprintf (stderr, "Events buffer overflow !!!\n");
         return -1;
@@ -69,7 +69,7 @@ int eventStack_add (EVENT *evt)
     events_buffer.buffer[events_buffer.head] = evt;
     events_buffer.head = i;
     
-    printf ("Adding event: tail=%d, head=%d\n");
+    printf ("Adding event: tail=%d, head=%d, (%d/%d)\n", events_buffer.tail, events_buffer.head, eventStack_available (), EVENTS_BUFFER_SIZE);
     
     return 0;
 }
@@ -218,7 +218,7 @@ int main (int argc, String argv[])
         exit (1);
     }
     
-    int rc;
+/*     int rc;
     rc = sqlite3_open ("DraftDolo.db", &db);
     if( rc )
     {
@@ -226,7 +226,7 @@ int main (int argc, String argv[])
         sqlite3_close (db);
         exit (1);
     }
-    
+ */    
     
     /* Install signal traps for proper shutdown */
     signal (SIGTERM, shutdownHandler);

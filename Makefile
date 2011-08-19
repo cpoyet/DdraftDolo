@@ -25,7 +25,8 @@ LDOPTS	= -O
 CC	=	gcc $(CCOPTS)
 LD	= 	gcc $(LDOPTS)
 
-CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPL_ConfigClock xPLSend
+#CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPL_ConfigClock xPLSend
+CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPLSend
 
 .c.o:	
 	$(CC) -c $<

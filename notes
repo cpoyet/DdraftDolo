@@ -1,0 +1,21 @@
+Clock:
+xPL_parseCommonArgs
+xPL_initialize(xPL_getParsedConnectionType())
+xPL_createService
+	newService
+		xPL_AllocService
+		xPL_getFairlyUniqueIdent
+		xPL_setServiceVendor
+		xPL_setServiceDeviceID
+		xPL_setServiceInstanceID
+		xPL_setHeartbeatInterval
+xPL_setServiceVersion
+xPL_addServiceListener
+xPL_setServiceEnabled
+    xPL_sendHeartbeat
+    xPL_sendGoodbyeHeartbeat
+	
+	createSendableMessage
+
+ for (;;)
+    xPL_processMessages(100);

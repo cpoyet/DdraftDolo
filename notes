@@ -1,6 +1,11 @@
 xPL_Clock.c:
 	xPL_parseCommonArgs
-	xPL_initialize(xPL_getParsedConnectionType())
+	xPL_initialize(xPL_getParsedConnectionType()) /* Create a socket for broadcasting messages (htons(BASE_XPL_PORT))*/
+		setupBroadcastAddr
+		makeConnection
+			attempHubConnection /* Attempt to make a hub based connection (htons(0)) */
+	    xPL_addIODevice(, -1, xPLFD, TRUE, FALSE, FALSE)) /* Install a listener for xPL oriented messages */
+		xPL_addMessageListener(xPL_handleServiceMessage, NULL);
 	xPL_createService
 		newService
 			xPL_AllocService
@@ -17,6 +22,14 @@ xPL_Clock.c:
 		createSendableMessage
 	for (;;)
 		xPL_processMessages(100);
+			SYSCALL(activeDevices = poll(pollInfo, pollInfoCount, thisTimeout))
+			for (deviceIndex = pollInfoCount - 1; deviceIndex >= 0; deviceIndex--)
+				pollUserInfo[deviceIndex].ioHandler(pollInfo[deviceIndex].fd, pollInfo[deviceIndex].revents, pollUserInfo[deviceIndex].userValue);
+---
+	xPL_receiveMessage
+---
+	xPL_handleServiceMessage
+
 
 xPL_Logger.c
 	xPL_parseCommonArgs

@@ -68,7 +68,7 @@ xPL_Clock.c:
 		makeConnection
 			attempHubConnection /* Attempt to make a hub based connection (htons(0)) */
 	    xPL_addIODevice(xPL_receiveMessage, -1, xPLFD, TRUE, FALSE, FALSE)) /* Install a listener for xPL oriented messages */
-		xPL_addMessageListener(xPL_handleServiceMessage, NULL);
+		xPL_addMessageListener(xPL_handleServiceMessage, NULL); -> On ajoute un listener dans messageListenerList
 	xPL_createService
 		newService
 			xPL_AllocService
@@ -94,7 +94,7 @@ xPL_Clock.c:
 		xPL_dispatchRawEvent
 		theMessage = parseMessage(messageBuff)
 		isHubEcho
-		xPL_dispatchMessageEvent  -> Envoi à tous les messages listeners
+		xPL_dispatchMessageEvent  -> Envoi à tous les messages listeners du tableau messageListenerList
 ---
 	xPL_handleServiceMessage 			/* Run the passed message by each service and see who is interested */
 		handleMessage 					/* Process a message and see if it applies to this service */

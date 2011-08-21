@@ -1,10 +1,73 @@
+typedef struct {
+  xPL_MessageType messageType;
+  int hopCount;
+  Bool receivedMessage; /* TRUE if received, FALSE if being sent */
+
+  String sourceVendor;
+  String sourceDeviceID;
+  String sourceInstanceID;
+
+  Bool isGroupMessage;
+  String groupName;
+
+  Bool isBroadcastMessage;
+  String targetVendor;
+  String targetDeviceID;
+  String targetInstanceID;
+
+  String schemaClass;
+  String schemaType;
+
+  xPL_NameValueListPtr messageBody;
+} xPL_Message, *xPL_MessagePtr;
+
+struct _xPL_Service {
+  Bool serviceEnabled;
+
+  String serviceVendor;
+  String serviceDeviceID;
+  String serviceInstanceID;
+
+  String serviceVersion;
+
+  int groupCount;
+  int groupAllocCount;
+  String *groupList;
+
+  Bool ignoreBroadcasts;
+
+  int heartbeatInterval;
+  time_t lastHeartbeatAt;
+  xPL_MessagePtr heartbeatMessage;
+
+  Bool configurableService;
+  Bool serviceConfigured;
+  String configFileName;
+  int configChangedCount;
+  int configChangedAllocCount;
+  xPL_ServiceChangedListenerDefPtr changedListenerList;
+
+  int configCount;
+  int configAllocCount;
+  xPL_ServiceConfigurablePtr configList;
+
+  int filterCount;
+  int filterAllocCount;
+  xPL_ServiceFilterPtr messageFilterList;
+
+  Bool reportOwnMessages;
+  int listenerCount;
+  int listenerAllocCount;
+  xPL_ServiceListenerDefPtr serviceListenerList; 
+};
+
 xPL_Clock.c:
 	xPL_parseCommonArgs
 	xPL_initialize(xPL_getParsedConnectionType()) /* Create a socket for broadcasting messages (htons(BASE_XPL_PORT))*/
 		setupBroadcastAddr
 		makeConnection
 			attempHubConnection /* Attempt to make a hub based connection (htons(0)) */
-	    xPL_addIODevice(, -1, xPLFD, TRUE, FALSE, FALSE)) /* Install a listener for xPL oriented messages */
+	    xPL_addIODevice(xPL_receiveMessage, -1, xPLFD, TRUE, FALSE, FALSE)) /* Install a listener for xPL oriented messages */
 		xPL_addMessageListener(xPL_handleServiceMessage, NULL);
 	xPL_createService
 		newService
@@ -27,8 +90,16 @@ xPL_Clock.c:
 				pollUserInfo[deviceIndex].ioHandler(pollInfo[deviceIndex].fd, pollInfo[deviceIndex].revents, pollUserInfo[deviceIndex].userValue);
 ---
 	xPL_receiveMessage
+		recvfrom(xPLFD, &messageBuff, MSG_BUFF_SIZE - 1, 0, NULL, NULL)
+		xPL_dispatchRawEvent
+		theMessage = parseMessage(messageBuff)
+		isHubEcho
+		xPL_dispatchMessageEvent  -> Envoi à tous les messages listeners
 ---
-	xPL_handleServiceMessage
+	xPL_handleServiceMessage 			/* Run the passed message by each service and see who is interested */
+		handleMessage 					/* Process a message and see if it applies to this service */
+			xPL_dispatchServiceEvent 	/* Dispatch service messages to appropriate listeners*/
+			
 
 
 xPL_Logger.c

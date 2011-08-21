@@ -166,18 +166,40 @@ void *thread_clock_process (void * arg)
     long dt;
     int rescan = 60;
     int sleep_time = 5;
+
+    struct tm *ts;
+    char       buf[80];
+  xPL_MessagePtr theMessage;
+  
+  theMessage = createReceivedMessage(xPL_MESSAGE_ANY);
+  xPL_setMessageType(theMessage, xPL_MESSAGE_TRIGGER);
     
     while  ( 1 == 1 )
     {
-        sleep ((sleep_time + 1) - (time (NULL) % sleep_time));
-        
+//        sleep ((sleep_time + 1) - (time (NULL) % sleep_time));
+    
+usleep(500000);
+
+    
         t2 = time (NULL);
+printf("%d, %d\n",t2, t2%60);
+if ( t2%60 == 0 )
+{
+
+    ts = localtime(&t2);
+    strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);
+    printf("%s\n", buf);
+	sleep(1);
+	}
+
+
         dt = (long)t2 - (long)t1;
         
-        sendClockTick ();
+       // sendClockTick ();
         printf ("Message sending...\n");
         t1 = t2;
     }
+	
     
     
     

@@ -12,7 +12,9 @@
 
 static time_t lastTimeSent = 0;
 static xPL_ServicePtr clockService = NULL;
+static xPL_ServicePtr schedulerService = NULL;
 static xPL_MessagePtr clockTickMessage = NULL;
+static xPL_MessagePtr schedulerTickMessage = NULL;
 
 pthread_t th_clock, th_event_mill;
 //sqlite3 *db;
@@ -219,6 +221,24 @@ if ( t2%60 == 0 )
     
     pthread_exit (0);
 }
+/*
+xPL_MessagePtr createSchedulerMessage(void)
+{
+	xPL_MessagePtr theMessage;
+	
+	theMessage = createReceivedMessage(xPL_MESSAGE_ANY); // ou  xPL_MESSAGE_TRIGGER peut-être ?
+
+	theMessage->hopCount = 1;
+
+	xPL_setSource(theMessage, "dolo", "xPLHal4Linux", "scheduler");
+	xPL_setTarget(theMessage, "dolo", "xPLHal4Linux", "scheduler");
+
+	xPL_setSchema(theMessage, "timer", "tip");
+
+return theMessage;
+
+}
+*/
 
 int main (int argc, String argv[])
 {
@@ -238,6 +258,11 @@ int main (int argc, String argv[])
     clockService = xPL_createService ("dolo", "clock", "default");
     xPL_setServiceVersion (clockService, CLOCK_VERSION);
     
+    schedulerService = xPL_createService ("dolo", "scheduler", "default");
+    xPL_setServiceVersion (schedulerService, CLOCK_VERSION);
+
+
+
     /* Add a responder for time setting */
     xPL_addServiceListener (clockService, clockMessageHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
     
@@ -245,6 +270,12 @@ int main (int argc, String argv[])
     clockTickMessage = xPL_createBroadcastMessage (clockService, xPL_MESSAGE_STATUS);
     xPL_setSchema (clockTickMessage, "clock", "update");
     
+	//schedulerTickMessage = createSchedulerMessage();
+    xPL_addServiceListener (schedulerService, schedulerMessageHandler, xPL_MESSAGE_ANY, "timer", NULL, NULL);
+    schedulerTickMessage = xPL_createTargetedMessage(schedulerService, xPL_MESSAGE_ANY, 
+																 xPL_getServiceVendor(schedulerService),
+																 xPL_getServiceDeviceID(schedulerService),
+																 xPL_getServiceInstanceID(schedulerService));
     
     eventStack_flush ();
     

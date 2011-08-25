@@ -90,8 +90,9 @@ xPL_addMessageNamedValue(xPL_MessagePtr theMessage, String theName, String theVa
 /* Met à jour ou ajoute la ligne si necessaire, le messageBody doit exister */
 xPL_setNamedValue(xPL_NameValueListPtr theList, String theName, String theValue)
 
---
-
+/* Pour traiter le message */
+xPL_dispatchMessageEvent(xPL_MessagePtr theMessage)
+---
 
 xPL_Clock.c:
 	xPL_parseCommonArgs

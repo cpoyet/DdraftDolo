@@ -171,8 +171,22 @@ void *thread_clock_process (void * arg)
     char       buf[80];
   xPL_MessagePtr theMessage;
   
-  theMessage = createReceivedMessage(xPL_MESSAGE_ANY);
-  xPL_setMessageType(theMessage, xPL_MESSAGE_TRIGGER);
+/*  theMessage = createReceivedMessage(xPL_MESSAGE_ANY);
+  xPL_setMessageType(theMessage, xPL_MESSAGE_TRIGGER);*/
+  
+  String theMessageText="xpl-trig\n"
+                        "{\n"
+                        "hop=1\n"
+                        "source=acme-pir.frontdoor\n"
+                        "target=*\n"
+                        "}\n"
+                        "timer.tip\n"
+                        "{\n"
+                        "device=scheduler\n"
+                        "time=%s\n"
+                        "}";
+  
+  theMessage = parseMessage(theMessageText);
     
     while  ( 1 == 1 )
     {
@@ -195,7 +209,7 @@ if ( t2%60 == 0 )
 
         dt = (long)t2 - (long)t1;
         
-       // sendClockTick ();
+       sendClockTick ();
         printf ("Message sending...\n");
         t1 = t2;
     }

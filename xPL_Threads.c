@@ -2,6 +2,11 @@
 /* Copyright (c) 2004, Gerald R. Duprey Jr. */
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+
 #include <time.h>
 #include <signal.h>
 #include <pthread.h>
@@ -119,6 +124,12 @@ void clockMessageHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, 
     xPL_getMessageType (theMessage), xPL_getSchemaClass (theMessage), xPL_getSchemaType (theMessage));
     
 }
+
+void schedulerMessageHandler(xPL_ServicePtr theService, xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+{
+	return;
+}
+
 
 void shutdownHandler (int onSignal)
 {
@@ -240,6 +251,144 @@ return theMessage;
 }
 */
 
+#define WS_BUFFER_SIZE 512 
+int get_url(char ** dest, char * url)
+{
+  int sockid;
+  int bufsize;
+  char buffer[WS_BUFFER_SIZE];
+  struct sockaddr_in socketaddr;
+  struct hostent *hostaddr;
+  struct servent *servaddr;
+  struct protoent *protocol;
+  
+  char *host;
+  char *file;
+  int nbcar=0;
+ 
+  char *http_adr = strdup(url);
+  
+  *dest=NULL;
+  
+  if (strncmp(http_adr, "http://", 7) == 0)
+	host = http_adr+7;
+  else
+	host = http_adr;
+
+  file = strchr(host,'/');
+  *file='\0';
+  file++;
+  
+ 
+  sprintf(buffer, "GET /%s HTTP/1.0\r\n"
+					"Host: www.earthtools.org\r\n"
+					"User-Agent: Hal4Linux\r\n"
+					"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+					"Accept-Language: fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3\r\n"
+					"Accept-Encoding: gzip, deflate\r\n"
+					"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r\n"
+					"Connection: keep-alive\r\n"
+					"Pragma: no-cache\r\n"
+					"Cache-Control: no-cache\r\n"
+					"\r\n", file);
+// printf("%s\n",buffer);
+ 
+  /* Resolve the host name */
+  if (!(hostaddr = gethostbyname(host))) {
+    free(http_adr);
+    fprintf(stderr, "Error resolving host.");
+    return(-1);
+  }
+ 
+  /* clear and initialize socketaddr */
+  memset(&socketaddr, 0, sizeof(socketaddr));
+  socketaddr.sin_family = AF_INET;
+ 
+  /* setup the servent struct using getservbyname */
+  servaddr = getservbyname("http", "tcp");
+  socketaddr.sin_port = servaddr->s_port;
+ 
+  memcpy(&socketaddr.sin_addr, hostaddr->h_addr, hostaddr->h_length);
+ 
+  /* protocol must be a number when used with socket()
+     since we are using tcp protocol->p_proto will be 0 */
+  protocol = getprotobyname("tcp");
+ 
+  sockid = socket(AF_INET, SOCK_STREAM, protocol->p_proto);
+  if (sockid < 0) {
+    free(http_adr);
+    fprintf(stderr, "Error creating socket.");
+   return(-1);
+  }
+ 
+  /* everything is setup, now we connect */
+  if(connect(sockid, (struct sockaddr*)&socketaddr, sizeof(socketaddr)) == -1) {
+    free(http_adr);
+    fprintf(stderr, "Error connecting.");
+    return(-1);
+  }
+  /* send our get request for http */
+  if (send(sockid, buffer, strlen(buffer), 0) == -1) {
+    free(http_adr);
+    fprintf(stderr, "Error sending data.");
+    return(-1);
+  }
+ 
+   bzero(buffer,WS_BUFFER_SIZE);
+ 
+  /* read the socket until its clear then exit */
+  while ( (bufsize = read(sockid, buffer, WS_BUFFER_SIZE - 1)))
+  {
+	*dest = (char*) realloc (*dest, nbcar + bufsize + 1);
+	strncpy((*dest)+nbcar, buffer, bufsize);
+	nbcar += bufsize;
+	(*dest)[nbcar]='\0';
+  }
+  
+  free(http_adr);
+  close(sockid);
+  
+  return nbcar;
+}
+
+
+
+
+int get_url_content(char ** dest, char * url)
+{
+
+	char *tmp_buff = NULL;
+	char *tmp_content;
+	int nbcar = 0;
+	int i;
+	
+	nbcar = get_url(&tmp_buff,url);
+//printf("%s\n---\n",tmp_buff);
+	
+	/*
+	
+	for (i=0; i<nbcar-3; i++)
+	{
+		if (tmp_buff[i]=='<' && tmp_buff[i+1]=='\r' )
+		{
+			(*dest) = (char *)malloc(sizeof(tmp_buff+i));
+			strcpy ( *dest, tmp_buff+i+1 );
+			break;
+		}
+	
+	}
+*/
+	tmp_content = strstr(tmp_buff,"<?xml");
+//	printf("strstr OK\n");
+//	printf("%s\n---\n",tmp_content);
+	(*dest) = (char *)malloc(strlen(tmp_content)+1);
+	strcpy ( *dest, tmp_content );
+
+	free (tmp_buff);
+return strlen(tmp_content);
+}
+
+
 int main (int argc, String argv[])
 {
     /* Parse command line parms */
@@ -261,6 +410,14 @@ int main (int argc, String argv[])
     schedulerService = xPL_createService ("dolo", "scheduler", "default");
     xPL_setServiceVersion (schedulerService, CLOCK_VERSION);
 
+char *test =NULL;
+int nbcar = get_url_content(&test,"http://www.earthtools.org/sun/48.376126/2.810753/25/8/1/1");
+printf("----\n%s\n--- %d recus ---\n",test, nbcar);
+free(test);
+test=NULL;
+nbcar = get_url_content(&test,"www.earthtools.org/height/48.376126/2.810753");
+printf("----\n%s\n--- %d recus ---\n",test, nbcar);
+free(test);
 
 
     /* Add a responder for time setting */

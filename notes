@@ -61,6 +61,9 @@ struct _xPL_Service {
   xPL_ServiceListenerDefPtr serviceListenerList; 
 };
 
+-- Création d'un service
+serviceList = realloc(serviceList, sizeof(xPL_ServicePtr) * serviceAllocCount);
+theService = xPL_AllocService(); -> (malloc(sizeof(xPL_Service)))
 
 
 
@@ -77,6 +80,15 @@ ou
 xPL_setTargetGroup(theMessage, groupNameBuffer); (groupNameBuffer = 'GROUP.qqchose')
 ou
 xPL_setTarget(theMessage, theVendor, theDeviceID, theInstanceID);
+
+xPL_setSchema(xPL_MessagePtr theMessage, String theSchemaClass, String theSchemaType)
+
+/* Crée le messageBody si NULL et y ajoute une seule ligne si elle n'existe pas, sinon la met à jour */
+xPL_setMessageNamedValue(xPL_MessagePtr theMessage, String theName, String theValue) 
+/* Crée le messageBody si NULL et y ajoute la ligne */
+xPL_addMessageNamedValue(xPL_MessagePtr theMessage, String theName, String theValue)
+/* Met à jour ou ajoute la ligne si necessaire, le messageBody doit exister */
+xPL_setNamedValue(xPL_NameValueListPtr theList, String theName, String theValue)
 
 --
 

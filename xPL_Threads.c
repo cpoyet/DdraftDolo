@@ -281,7 +281,7 @@ int get_url(char ** dest, char * url)
   
  
   sprintf(buffer, "GET /%s HTTP/1.0\r\n"
-					"Host: www.earthtools.org\r\n"
+					"Host: %s\r\n"
 					"User-Agent: Hal4Linux\r\n"
 					"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
 					"Accept-Language: fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3\r\n"
@@ -290,7 +290,7 @@ int get_url(char ** dest, char * url)
 					"Connection: keep-alive\r\n"
 					"Pragma: no-cache\r\n"
 					"Cache-Control: no-cache\r\n"
-					"\r\n", file);
+					"\r\n", file, host);
 // printf("%s\n",buffer);
  
   /* Resolve the host name */

@@ -10,7 +10,7 @@
 #include <time.h>
 #include <signal.h>
 #include <pthread.h>
-#include "../xPL.h"
+#include <xPL.h>
 //#include "./sqlite/sqlite3.h"
 
 #define CLOCK_VERSION "1.0"

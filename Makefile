@@ -18,6 +18,8 @@ LD	= 	gcc $(LDOPTS)
 #CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPL_ConfigClock xPLSend
 CMD_LIST = xPL_Threads
 
+SUBDIR= xPLLib libroxml
+
 .c.o:	
 	$(CC) -c $<
 
@@ -30,16 +32,18 @@ CMD_LIST = xPL_Threads
 	$(LD) -o $@ $< ./libroxml/libroxml.a ./xPLLib/xPL.a $(LIBS)
 
 
-all:	${CMD_LIST} 
+all:	${CMD_LIST} xPL_Threads
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) all); done
 
 
 clean:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) clean); done
 #	rm -f *.o *.a core ${CMD_LIST}
 	rm -f *.o core ${CMD_LIST}
 
-#xPL_Threads: xPL_Threads.c
-#	$(CC) -c xPL_Threads.c -g
-#	$(LD) -g -o xPL_Threads xPL_Threads.o ../xPL.a -lpthread $(LIBS)
+xPL_Threads: xPL_Threads.c
+	$(CC) -c xPL_Threads.c -g
+	$(LD) -g -o xPL_Threads xPL_Threads.o ./xPL.a -lpthread $(LIBS)
 
 rebuild: clean all
 

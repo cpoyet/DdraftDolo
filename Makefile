@@ -43,7 +43,7 @@ clean:
 
 xPL_Threads: xPL_Threads.c
 	$(CC) -c xPL_Threads.c -g
-	$(LD) -g -o xPL_Threads xPL_Threads.o ./xPL.a -lpthread $(LIBS)
+	$(LD) -g -o xPL_Threads xPL_Threads.o ./libroxml/libroxml.a ./xPLLib/xPL.a -lpthread $(LIBS)
 
 rebuild: clean all
 

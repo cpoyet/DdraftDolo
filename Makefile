@@ -3,19 +3,9 @@
 #
 
 #
-# For LINUX, use the following
-CCOPTS = -g -DLINUX -pedantic -Wall
-LIBS = -g -lm 
+CCOPTS = -g -DLINUX -pedantic -I./xPLLib -I./libroxml
+LIBS = -g -lpthread  
 
-# For UnixWare systems, use the following
-# CCOPTS = -O2 -DUNIXWARE
-# LIBS = -lnsl -lsocket -lm
-
-#
-# For Alpha/DEC OSF/Tru64
-#
-# CCOPTS = -O2 -DTRU64
-# LIBS = -lm
 
 # *******************************************************
 # ******* No more customizations from here down *********
@@ -26,35 +16,30 @@ CC	=	gcc $(CCOPTS)
 LD	= 	gcc $(LDOPTS)
 
 #CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPL_ConfigClock xPLSend
-CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPLSend
+CMD_LIST = xPL_Threads
 
 .c.o:	
 	$(CC) -c $<
 
 .o:
-	$(LD) -o $@ $< ../xPL.a $(LIBS) 
+
+	$(LD) -o $@ $< ./libroxml/libroxml.a ./xPLLib/xPL.a $(LIBS) 
 
 .c:	
 	$(CC) -c $<
-	$(LD) -o $@ $< ../xPL.a $(LIBS)
+	$(LD) -o $@ $< ./libroxml/libroxml.a ./xPLLib/xPL.a $(LIBS)
 
 
-#all:	${CMD_LIST} statichub
-all:	${CMD_LIST} xPL_Threads
+all:	${CMD_LIST} 
 
-statichub: xPL_Hub.o
-	$(LD) -static -o xPL_Hub_static xPL_Hub.o ../xPL.a $(LIBS)
 
 clean:
-	rm -f *.o *.a core ${CMD_LIST}
+#	rm -f *.o *.a core ${CMD_LIST}
+	rm -f *.o core ${CMD_LIST}
 
-xPL_Threads: xPL_Threads.c
-	$(CC) -c xPL_Threads.c -g
-	$(LD) -g -o xPL_Threads xPL_Threads.o ../xPL.a -lpthread $(LIBS)
-
-hubdist: rebuild
-	rm -f ../../web/xPLHub.tgz
-	tar czf ../../web/xPLHub.tgz xPL_Hub xPL_Hub_static xPLHub_INSTALL.txt
+#xPL_Threads: xPL_Threads.c
+#	$(CC) -c xPL_Threads.c -g
+#	$(LD) -g -o xPL_Threads xPL_Threads.o ../xPL.a -lpthread $(LIBS)
 
 rebuild: clean all
 

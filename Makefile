@@ -26,7 +26,9 @@ CC	=	gcc $(CCOPTS)
 LD	= 	gcc $(LDOPTS)
 
 #CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPL_ConfigClock xPLSend
-CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPLSend
+CMD_LIST = xPL_Threads
+
+SUBDIR= xPLLib libroxml
 
 .c.o:	
 	$(CC) -c $<
@@ -40,21 +42,19 @@ CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPLSend
 
 
 #all:	${CMD_LIST} statichub
-all:	${CMD_LIST} xPL_Threads
+all:	${CMD_LIST} 
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) all); done
 
 statichub: xPL_Hub.o
 	$(LD) -static -o xPL_Hub_static xPL_Hub.o ../xPL.a $(LIBS)
 
 clean:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) clean); done
 	rm -f *.o *.a core ${CMD_LIST}
 
 xPL_Threads: xPL_Threads.c
 	$(CC) -c xPL_Threads.c -g
 	$(LD) -g -o xPL_Threads xPL_Threads.o ../xPL.a -lpthread $(LIBS)
-
-hubdist: rebuild
-	rm -f ../../web/xPLHub.tgz
-	tar czf ../../web/xPLHub.tgz xPL_Hub xPL_Hub_static xPLHub_INSTALL.txt
 
 rebuild: clean all
 

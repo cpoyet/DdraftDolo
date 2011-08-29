@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <xPL.h>
+#include <roxml.h>
 //#include "./sqlite/sqlite3.h"
 
 #define CLOCK_VERSION "1.0"
@@ -22,6 +23,7 @@ static xPL_MessagePtr clockTickMessage = NULL;
 static xPL_MessagePtr schedulerTickMessage = NULL;
 
 pthread_t th_clock, th_event_mill;
+pthread_t th_xhcp;
 //sqlite3 *db;
 
 typedef enum
@@ -389,6 +391,147 @@ return strlen(tmp_content);
 }
 
 
+
+ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
+    ssize_t n, rc;
+    char    c, *buffer;
+
+    buffer = vptr;
+
+    for ( n = 1; n < maxlen; n++ ) {
+	
+	if ( (rc = read(sockd, &c, 1)) == 1 ) {
+	    *buffer++ = c;
+	    if ( c == '\n' )
+		break;
+	}
+	else if ( rc == 0 ) {
+	    if ( n == 1 )
+		return 0;
+	    else
+		break;
+	}
+	else {
+	    if ( errno == EINTR )
+		continue;
+	    return -1;
+	}
+    }
+
+    *buffer = 0;
+    return n;
+}
+
+
+/*  Write a line to a socket  */
+
+ssize_t Writeline(int sockd, const void *vptr, size_t n) {
+    size_t      nleft;
+    ssize_t     nwritten;
+    const char *buffer;
+
+    buffer = vptr;
+    nleft  = n;
+
+    while ( nleft > 0 ) {
+	if ( (nwritten = write(sockd, buffer, nleft)) <= 0 ) {
+	    if ( errno == EINTR )
+		nwritten = 0;
+	    else
+		return -1;
+	}
+	nleft  -= nwritten;
+	buffer += nwritten;
+    }
+
+    return n;
+}
+
+#define MAX_LINE 256
+#define LISTENQ        (1024)   /*  Backlog for listen()   */
+
+
+void * xhcpServer(void * arg)
+ {
+    int       list_s;                /*  listening socket          */
+    int       conn_s;                /*  connection socket         */
+    short int port;                  /*  port number               */
+    struct    sockaddr_in servaddr;  /*  socket address structure  */
+    char      buffer[MAX_LINE];      /*  character buffer          */
+    char     *endptr;                /*  for strtol()              */
+
+
+    /*  Get port number from the command line, and
+        set to default port if no arguments were supplied  */
+
+	port = 3865;
+
+	
+    /*  Create the listening socket  */
+
+    if ( (list_s = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+	fprintf(stderr, "ECHOSERV: Error creating listening socket.\n");
+	exit(EXIT_FAILURE);
+    }
+
+
+    /*  Set all bytes in socket address structure to
+        zero, and fill in the relevant data members   */
+
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family      = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port        = htons(port);
+
+
+    /*  Bind our socket addresss to the 
+	listening socket, and call listen()  */
+
+    if ( bind(list_s, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 ) {
+	fprintf(stderr, "ECHOSERV: Error calling bind()\n");
+	exit(EXIT_FAILURE);
+    }
+
+    if ( listen(list_s, LISTENQ) < 0 ) {
+	fprintf(stderr, "ECHOSERV: Error calling listen()\n");
+	exit(EXIT_FAILURE);
+    }
+
+    
+    /*  Enter an infinite loop to respond
+        to client requests and echo input  */
+
+    while ( 1 )
+	{
+
+		/*  Wait for a connection, then accept() it  */
+
+		if ( (conn_s = accept(list_s, NULL, NULL) ) < 0 ) {
+			fprintf(stderr, "ECHOSERV: Error calling accept()\n");
+			exit(EXIT_FAILURE);
+		}
+	char *bonjour ="200 xpl-xplhal2.zubenelguenubi Version 2.2.3600.39964 XHCP 1.5.0";
+		Writeline(conn_s, bonjour, strlen(bonjour));
+
+		/*  Retrieve an input line from the connected socket
+			then simply write it back to the same socket.     */
+
+		Readline(conn_s, buffer, MAX_LINE-1);
+		Writeline(conn_s, buffer, strlen(buffer));
+
+
+		/*  Close the connected socket  */
+
+    }
+		if ( close(conn_s) < 0 ) {
+			fprintf(stderr, "ECHOSERV: Error calling close()\n");
+			exit(EXIT_FAILURE);
+		}
+}
+
+
+
+
 int main (int argc, String argv[])
 {
     /* Parse command line parms */
@@ -411,15 +554,89 @@ int main (int argc, String argv[])
     xPL_setServiceVersion (schedulerService, CLOCK_VERSION);
 
 char *test =NULL;
-int nbcar = get_url_content(&test,"http://www.earthtools.org/sun/48.376126/2.810753/25/8/1/1");
+int nbcar = get_url_content(&test,"http://www.earthtools.org/sun/48.376126/2.810753/29/8/1/1");
 printf("----\n%s\n--- %d recus ---\n",test, nbcar);
+node_t* root_node;
+root_node = roxml_load_buf(test);
+printf("--- XML CHARGE !!! --- \n");
+printf("%d childs\n",roxml_get_chld_nb(root_node));
+
+node_t **result;
+int nb_eml;
+result = roxml_xpath( root_node, "/morning/twilight/civil", &nb_eml);
+
+printf("%d elements trouve\n",nb_eml);
+printf("%d childs\n",roxml_get_chld_nb(result[0]));
+
+char *nodeType;
+switch ( roxml_get_type(result[0]) )
+{
+ case ROXML_ATTR_NODE:
+	nodeType = "attribute nodes";
+	break;
+ case ROXML_TXT_NODE:
+	nodeType = "text nodes";
+	break;
+ case ROXML_PI_NODE:
+	nodeType = "processing_intruction nodes";
+	break;
+ case ROXML_CMT_NODE:
+	nodeType = " comment nodes";
+	break;
+ case ROXML_ELM_NODE:
+	nodeType = "element nodes";
+	break;
+ default:
+	nodeType = "node type indéfini";
+}
+printf("%s\n", nodeType);	
+
+char contenu[50];
+int sz_contenu;
+
+printf("roxml_get_content retourne : %s\n", roxml_get_content(result[0], contenu, 50, NULL));
+
+
+if ( result != NULL )
+{
+	roxml_release(result);
+}
+else
+{
+	printf("Xpath error...\n");
+}
+
+if ( (result = roxml_xpath( root_node, "/morning/twilight/civil", &nb_eml)) != NULL )
+{
+	printf("Le soleil se lève à %s\n", roxml_get_content(result[0], contenu, 50, NULL) );
+	roxml_release(result);
+}
+if ( (result = roxml_xpath( root_node, "/evening/twilight/civil", &nb_eml)) != NULL )
+{
+	printf("Le soleil se couche à %s\n", roxml_get_content(result[0], contenu, 50, NULL) );
+	roxml_release(result);
+}
+
+
+
+
 free(test);
 test=NULL;
 nbcar = get_url_content(&test,"www.earthtools.org/height/48.376126/2.810753");
 printf("----\n%s\n--- %d recus ---\n",test, nbcar);
 free(test);
 
+printf("Lancement du serveur XHCP\n");
 
+    if (pthread_create (&th_xhcp, NULL, xhcpServer, NULL) < 0)
+    {
+        fprintf (stderr, "pthread_create error for thread th_xhcp\n");
+        exit (1);
+    }
+
+
+sleep(60);
+exit(0);
     /* Add a responder for time setting */
     xPL_addServiceListener (clockService, clockMessageHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
     

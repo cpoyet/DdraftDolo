@@ -1,4 +1,14 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/socket.h>       /*  socket definitions        */
+#include <sys/types.h>        /*  socket types              */
+#include <sys/wait.h>         /*  for waitpid()             */
+#include <arpa/inet.h>        /*  inet (3) funtions         */
+#include <unistd.h>           /*  misc. UNIX functions      */
+#include <sys/time.h>         /*  For select()  */
 
+#include "XHCP_server.h"
 
 /*  Global macros/variables  */
 
@@ -9,6 +19,9 @@
 #define XHCP_HAL_version "1.0.3.1"
 #define XHCP_version "1.5"
 
+#define LISTENQ          			(1024)
+
+#define XHCP_SERVER_PORT            (3865)
 
 /*  Prints an error message and quits  */
 
@@ -57,6 +70,18 @@ ssize_t Readline(int sockd, void *vptr, size_t maxlen)
 }
 
 
+/*  Removes trailing whitespace from a string  */
+
+int Trim(char * buffer)
+{
+    int n = strlen(buffer) - 1;
+    
+    while ( !isalnum(buffer[n]) && n >= 0 )
+		buffer[n--] = '\0';
+    
+    return 0;
+}
+
 /*  Write a line to a socket  */
 
 ssize_t Writeline(int sockd, const void *vptr, size_t n)
@@ -84,9 +109,17 @@ ssize_t Writeline(int sockd, const void *vptr, size_t n)
     return n;
 }
 
+XHCP_printMessage(int sockd, XHCP_response_id messId)
+{
+	XHCP_response *resp;
+	int i;
+	
+	resp = &XHCP_responseList[messId];
+	
+		//	Writeline(sockd, response_msg, strlen(response_msg));
+}
 
-
-int getXHCPRequest(int conn, struct ReqInfo * reqinfo)
+int getXHCPRequest(int conn /*, ReqInfo * reqinfo*/)
 {
     
     char   buffer[MAX_REQ_LINE] = {0};
@@ -122,8 +155,8 @@ int getXHCPRequest(int conn, struct ReqInfo * reqinfo)
         else if ( rval == 0 )
         {
             /*  input not ready after timeout  */
-			sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
-			Writeline(conn, response_msg, strlen(response_msg));
+//			sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
+//			Writeline(conn, response_msg, strlen(response_msg));
             return 0;
         }
         else
@@ -135,10 +168,10 @@ int getXHCPRequest(int conn, struct ReqInfo * reqinfo)
             if ( buffer[0] == '\0' )
 				break;
             
-            if ( Parse_Line(buffer, XHCP_reqinfo) )
+            if ( /*Parse_Line(buffer, XHCP_reqinfo)*/ 1 )
 				break;
         }
-    } while ( XHCP_reqinfo->id != CMD_QUIT );
+    } while ( /*XHCP_reqinfo->id != CMD_QUIT*/ 1 );
     
     return 0;
 }
@@ -162,7 +195,7 @@ int XHCP_server(int argc, char *argv[])
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port        = htons(SERVER_PORT);
+    servaddr.sin_port        = htons(XHCP_SERVER_PORT);
     
     
     /*  Assign socket address to socket  */
@@ -188,7 +221,7 @@ int XHCP_server(int argc, char *argv[])
         sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
 		Writeline(conn, response_msg, strlen(response_msg));
 	
-		while  ( (retStatus = XHCP_Request(conn)) > 0 );
+		while  ( /*(retStatus = XHCP_Request(conn)) > 0*/ 1 );
 		
 		if ( retStatus < 0 )
 			Error_Quit("Connexion time out");

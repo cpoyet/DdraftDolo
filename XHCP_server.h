@@ -1,6 +1,19 @@
+#include <stdio.h>
 
 
 
+#ifndef XHCP_SERVER_H
+
+#define XHCP_SERVER_H
+#define XHCP_SERVER_EXTERN 
+
+#else
+#define XHCP_SERVER_EXTERN extern
+
+#endif
+
+#ifndef XHCP_SERVER_TYPES
+#define XHCP_SERVER_TYPES
 typedef enum {	CMD_ADDEVENT        , 
 				CMD_ADDSINGLEEVENT  , 
 				CMD_CAPABILITIES    , 
@@ -108,7 +121,8 @@ typedef enum {	RES_HALWELCOM,
 				RES_REPALRACT,
 				RES_REPDATFOL,
 				END_RES			} XHCP_response_id;
-				
+#endif
+
 typedef struct
 {
 	XHCP_command_id id;
@@ -123,7 +137,9 @@ typedef struct
 	char *str;
 } XHCP_response;
 
-XHCP_command XHCP_commandList[] = {
+
+
+XHCP_SERVER_EXTERN XHCP_command XHCP_commandList[] = {
 				{ CMD_ADDEVENT        , "ADDEVENT"         , NULL }, 
 				{ CMD_ADDSINGLEEVENT  , "ADDSINGLEEVENT"   , NULL },  
 				{ CMD_CAPABILITIES    , "CAPABILITIES"     , NULL },
@@ -169,8 +185,9 @@ XHCP_command XHCP_commandList[] = {
 				{ CMD_QUIT            , "QUIT"             , NULL },   
 				{ END_CMD             , NULL               , NULL }  };
 				
-XHCP_response XHCP_responseList[] = {
-				{ RES_HALWELCOM, 200, "XPLHal Welcome Banner" },
+XHCP_SERVER_EXTERN XHCP_response XHCP_responseList[] = {
+//                                     ----+----1----+----2----+----3----+----4----+----5
+				{ RES_HALWELCOM, 200, "XPLHal Welcome Banner                             " },
 				{ RES_RELOADSUC, 201, "Reload successful" },
 				{ RES_SCRIPTEXE, 203, "Script executed" },
 				{ RES_LSTSETFOL, 204, "List of settings follows" },
@@ -190,7 +207,7 @@ XHCP_response XHCP_responseList[] = {
 				{ RES_LSTEVTFOL, 218, "List of events follows" },
 				{ RES_EVTADDSUC, 219, "Event added successfully" },
 				{ RES_CFGITESUC, 220, "Configuration items received successfully" },
-				{ RES_CLOCONBYE, 221, "Closing connection - good bye" },
+				{ RES_CLOCONBYE, 221, "Closing connection - good bye                     " },
 				{ RES_EVTINFFOL, 222, "Event information follows" },
 				{ RES_EVTDEVSUC, 223, "Event deleted successfully" },
 				{ RES_LSTSUBFOL, 224, "List of subs follows" },

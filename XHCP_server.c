@@ -1,12 +1,20 @@
+
+
+#define _XHCP_SERVER_C_
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
+#include <ctype.h>
 #include <sys/socket.h>       /*  socket definitions        */
 #include <sys/types.h>        /*  socket types              */
 #include <sys/wait.h>         /*  for waitpid()             */
 #include <arpa/inet.h>        /*  inet (3) funtions         */
 #include <unistd.h>           /*  misc. UNIX functions      */
 #include <sys/time.h>         /*  For select()  */
+
 
 #include "XHCP_server.h"
 
@@ -23,7 +31,7 @@
 
 #define XHCP_SERVER_PORT            (3865)
 
-/*  Prints an error message and quits  */
+
 
 void Error_Quit(char const * msg)
 {
@@ -109,23 +117,28 @@ ssize_t Writeline(int sockd, const void *vptr, size_t n)
     return n;
 }
 
-XHCP_printMessage(int sockd, XHCP_response_id messId)
+void XHCP_printMessage(int sockd, XHCP_response_id messId )
 {
 	XHCP_response *resp;
 	int i;
+	char response_msg[256];	
 	
-	resp = &XHCP_responseList[messId];
 	
-		//	Writeline(sockd, response_msg, strlen(response_msg));
+	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != messId; resp++);
+	
+	sprintf(response_msg, "%d %s\n",resp->num, resp->str);
+	
+	Writeline(sockd, response_msg, strlen(response_msg));
 }
 
-int getXHCPRequest(int conn /*, ReqInfo * reqinfo*/)
+int getXHCPRequest(int conn)
 {
     
     char   buffer[MAX_REQ_LINE] = {0};
     int    rval;
     fd_set fds;
     struct timeval tv;
+	int status = 0;
     
     
     /*  Set timeout to 5 seconds  */
@@ -151,13 +164,13 @@ int getXHCPRequest(int conn /*, ReqInfo * reqinfo*/)
         if ( rval < 0 )
 		{
             Error_Quit("Error calling select() in get_request()");
+			status = -1;
 		}
         else if ( rval == 0 )
         {
             /*  input not ready after timeout  */
-//			sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
-//			Writeline(conn, response_msg, strlen(response_msg));
-            return 0;
+			XHCP_printMessage(conn, RES_CONTIMOUT );  // 221 Connexion time-out
+			status = 0;
         }
         else
         {
@@ -166,14 +179,15 @@ int getXHCPRequest(int conn /*, ReqInfo * reqinfo*/)
             Trim(buffer);
             
             if ( buffer[0] == '\0' )
-				break;
-            
-            if ( /*Parse_Line(buffer, XHCP_reqinfo)*/ 1 )
-				break;
-        }
-    } while ( /*XHCP_reqinfo->id != CMD_QUIT*/ 1 );
+				continue;
+            printf("Ligne lue : %s\n", buffer);
+            //status = Parse_Line(buffer, XHCP_reqinfo); On traite la ligne...
+			status=1;
+
+		}
+    } while ( status > 0 );
     
-    return 0;
+    return status;
 }
 
 
@@ -184,7 +198,7 @@ int XHCP_server(int argc, char *argv[])
     struct sockaddr_in servaddr;
 	int retStatus;
     
-	char response_msg[256];
+
     
     /*  Create socket  */
     if ( (listener = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
@@ -218,13 +232,16 @@ int XHCP_server(int argc, char *argv[])
         if ( (conn = accept(listener, NULL, NULL)) < 0 )
 			Error_Quit("Error calling accept()");
         
-        sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
-		Writeline(conn, response_msg, strlen(response_msg));
+        XHCP_printMessage(conn, RES_HALWELCOM );  // 
+		//sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
+		//Writeline(conn, response_msg, strlen(response_msg));
 	
-		while  ( /*(retStatus = XHCP_Request(conn)) > 0*/ 1 );
+		while  ( (retStatus = getXHCPRequest(conn)) > 0 );
 		
-		if ( retStatus < 0 )
-			Error_Quit("Connexion time out");
+		if ( retStatus == 0 )
+		{
+			XHCP_printMessage(conn, RES_CLOCONBYE );  // Closing connection - good bye
+		}
     
         /*  If we get here, we are still in the parent process,
         so close the connected socket, clean up child processes,
@@ -233,9 +250,7 @@ int XHCP_server(int argc, char *argv[])
         if ( close(conn) < 0 )
 			Error_Quit("Error closing connection socket in parent.");
         
-        waitpid(-1, NULL, WNOHANG);
     }
     
     return EXIT_FAILURE;    /*  We shouldn't get here  */
 }
-

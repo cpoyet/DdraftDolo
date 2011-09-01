@@ -1,0 +1,31 @@
+
+CC=cc
+CFLAGS=-I/usr/local/include
+LDFLAGS= -L/usr/local/lib
+
+RM=/usr/bin/rm
+MAKE=/usr/ccs/bin/make
+MAKEDEPEND=/usr/openwin/bin/makedepend
+AR=/usr/ccs/bin/ar
+
+SRC= roxml-internal.c roxml-parse-engine.c roxml.c
+ARCH= ../libroxml.a
+
+#OBJ=$(subst .c,.o,$(SRC))
+OBJ=$(SRC:%.c=%.o)
+
+%.o: %.c
+  $(CC) $(CFLAGS) -c $<
+
+all: 
+	@$(MAKE) $(ARCH)
+
+$(ARCH): $(OBJ)
+	@echo Création de la l\'archive $(ARCH)
+	@$(RM) -f $@
+	$(AR) rc $@  $(OBJ)
+
+
+clean:
+	@$(RM) -f $(OBJ) $(ARCH) core *~
+

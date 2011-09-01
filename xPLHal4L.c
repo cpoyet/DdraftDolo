@@ -4,6 +4,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <time.h>
 #include <signal.h>
@@ -30,6 +31,7 @@ int main (int argc, String argv[])
     }
 
 	
-	XHCP_printMessage(0, RES_HALWELCOM);
+	//XHCP_printMessage(0, RES_HALWELCOM);
+	 XHCP_server(0, NULL);
 
 }

@@ -1,20 +1,21 @@
-#include <stdio.h>
 
 
 
-#ifndef XHCP_SERVER_H
 
-#define XHCP_SERVER_H
-#define XHCP_SERVER_EXTERN 
 
+#ifndef _XHCP_SERVER_H_
+#define _XHCP_SERVER_H_
+
+#ifndef _XHCP_SERVER_C_
+#define EXT_XHCP_SERVER extern
 #else
-#define XHCP_SERVER_EXTERN extern
-
+#define EXT_XHCP_SERVER 
 #endif
 
-#ifndef XHCP_SERVER_TYPES
-#define XHCP_SERVER_TYPES
-typedef enum {	CMD_ADDEVENT        , 
+
+#include <stdio.h>
+
+EXT_XHCP_SERVER enum _XHCP_command_id {	CMD_ADDEVENT        , 
 				CMD_ADDSINGLEEVENT  , 
 				CMD_CAPABILITIES    , 
 				CMD_CLEARERRLOG     , 
@@ -57,8 +58,9 @@ typedef enum {	CMD_ADDEVENT        ,
 				CMD_SETRULE         , 
 				CMD_SETSETTING      , 
 				CMD_QUIT            ,
-				END_CMD					 } XHCP_command_id;
-typedef enum {	RES_HALWELCOM,
+				END_CMD					 };
+typedef enum _XHCP_command_id XHCP_command_id;
+EXT_XHCP_SERVER enum _XHCP_response_id {	RES_HALWELCOM,
 				RES_RELOADSUC,
 				RES_SCRIPTEXE,
 				RES_LSTSETFOL,
@@ -78,6 +80,7 @@ typedef enum {	RES_HALWELCOM,
 				RES_LSTEVTFOL,
 				RES_EVTADDSUC,
 				RES_CFGITESUC,
+				RES_CONTIMOUT,
 				RES_CLOCONBYE,
 				RES_EVTINFFOL,
 				RES_EVTDEVSUC,
@@ -120,8 +123,8 @@ typedef enum {	RES_HALWELCOM,
 				RES_INTNERROR,
 				RES_REPALRACT,
 				RES_REPDATFOL,
-				END_RES			} XHCP_response_id;
-#endif
+				END_RES			};
+typedef enum _XHCP_response_id XHCP_response_id;
 
 typedef struct
 {
@@ -138,8 +141,14 @@ typedef struct
 } XHCP_response;
 
 
+#ifndef _XHCP_SERVER_C_
 
-XHCP_SERVER_EXTERN XHCP_command XHCP_commandList[] = {
+EXT_XHCP_SERVER XHCP_command *XHCP_commandList;
+EXT_XHCP_SERVER XHCP_response *XHCP_responseList;
+
+#else
+
+EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_ADDEVENT        , "ADDEVENT"         , NULL }, 
 				{ CMD_ADDSINGLEEVENT  , "ADDSINGLEEVENT"   , NULL },  
 				{ CMD_CAPABILITIES    , "CAPABILITIES"     , NULL },
@@ -185,9 +194,9 @@ XHCP_SERVER_EXTERN XHCP_command XHCP_commandList[] = {
 				{ CMD_QUIT            , "QUIT"             , NULL },   
 				{ END_CMD             , NULL               , NULL }  };
 				
-XHCP_SERVER_EXTERN XHCP_response XHCP_responseList[] = {
+EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {
 //                                     ----+----1----+----2----+----3----+----4----+----5
-				{ RES_HALWELCOM, 200, "XPLHal Welcome Banner                             " },
+				{ RES_HALWELCOM, 200, "XPLHal Welcome Banner" },
 				{ RES_RELOADSUC, 201, "Reload successful" },
 				{ RES_SCRIPTEXE, 203, "Script executed" },
 				{ RES_LSTSETFOL, 204, "List of settings follows" },
@@ -207,7 +216,8 @@ XHCP_SERVER_EXTERN XHCP_response XHCP_responseList[] = {
 				{ RES_LSTEVTFOL, 218, "List of events follows" },
 				{ RES_EVTADDSUC, 219, "Event added successfully" },
 				{ RES_CFGITESUC, 220, "Configuration items received successfully" },
-				{ RES_CLOCONBYE, 221, "Closing connection - good bye                     " },
+				{ RES_CONTIMOUT, 221, "Connexion time-out" },
+				{ RES_CLOCONBYE, 221, "Closing connection - good bye" },
 				{ RES_EVTINFFOL, 222, "Event information follows" },
 				{ RES_EVTDEVSUC, 223, "Event deleted successfully" },
 				{ RES_LSTSUBFOL, 224, "List of subs follows" },
@@ -250,4 +260,5 @@ XHCP_SERVER_EXTERN XHCP_response XHCP_responseList[] = {
 				{ RES_REPALRACT, 530, "A replication client is already active" },
 				{ RES_REPDATFOL, 600, "Replication data follows" },
 				{ END_RES,		   0, NULL } };
-
+#endif
+#endif

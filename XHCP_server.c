@@ -15,7 +15,7 @@
 #include <arpa/inet.h>        /*  inet (3) funtions         */
 #include <unistd.h>           /*  misc. UNIX functions      */
 #include <sys/time.h>         /*  For select()  */
-
+#include <sys/systeminfo.h>
 
 #include "XHCP_server.h"
 
@@ -117,21 +117,24 @@ ssize_t Writeline(int sockd, const void *vptr, size_t n)
     return n;
 }
 
-void XHCP_printXHCPMessage(int sockd, XHCP_response_id messId )
+
+void XHCP_print(int sockd, char *Libelle, ... )
 {
-	XHCP_response *resp;
-	int i;
-	char response_msg[256];	
+	va_list Marker;
+	char msg[256];	
 	
+    /* construction du libelle du message */
+    va_start ( Marker, Libelle);
+    vsprintf (msg, Libelle, Marker);
+    va_end ( Marker);
+
+	strcat(msg,"\r\n");
 	
-	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != messId; resp++);
-	
-	sprintf(response_msg, "%d %s\r\n",resp->num, resp->str);
-	
-	Writeline(sockd, response_msg, strlen(response_msg));
+	Writeline(sockd, msg, strlen(msg));
 }
 
-void XHCP_printCustomMessage(int sockd, int messNum, char *Libelle, ... )
+
+void XHCP_printMessage(int sockd, int messNum, char *Libelle, ... )
 {
 	va_list Marker;
 	char response_msg[256];	
@@ -150,6 +153,31 @@ void XHCP_printCustomMessage(int sockd, int messNum, char *Libelle, ... )
 	Writeline(sockd, response_msg, strlen(response_msg));
 }
 
+void XHCP_printXHCPResponse(int sockd, XHCP_response_id messId )
+{
+	XHCP_response *resp;
+	
+	
+	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != messId; resp++);
+	
+	//sprintf(response_msg, "%d %s\r\n",resp->num, resp->str);
+	
+	XHCP_printMessage(sockd, resp->num, resp->str );
+	
+}
+
+char * toUpper(char *str)
+{
+	char *c;
+
+	for ( c=str; *c != '\0'; c++)
+	{
+		if ( *c>='a' && *c<='z' )
+			*c= *c-32;
+	}
+	
+	return str;
+}
 
 int Parse_Line(int conn, char *buffer)
 {
@@ -159,7 +187,6 @@ int Parse_Line(int conn, char *buffer)
 	
 	char *token, *svgptr;
 	int i;
-	char *c;
 	
 	XHCP_command *cmd;
 	
@@ -177,30 +204,25 @@ int Parse_Line(int conn, char *buffer)
 			argv[argc++]=token;
 		}
 		
-		for ( i=0; i<strlen(argv[0]); i++)
-		{
-			c=&argv[0][i];
-			if ( *c>='a' && *c<='z' )
-				*c= *c-32;
-		}
+		toUpper(argv[0]);
 
 		for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
 			if ( strcmp (argv[0], cmd->str) == 0 ) break;
 			
 		if ( cmd->id == END_CMD )
 		{
-			XHCP_printXHCPMessage(conn, RES_COMNOTREC );  // 500 Command not recognised
+			XHCP_printXHCPResponse(conn, RES_COMNOTREC );  // 500 Command not recognised
 			retValue = 1;
 		}
 		else
 		{
 			if ( cmd->fnct == NULL )
 			{
-			XHCP_printXHCPMessage(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
+			XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
 			retValue = 1;
 			}
 			else
-				retValue = cmd->fnct(argc, argv);
+				retValue = cmd->fnct(conn, argc, argv);
 		}
 		
 
@@ -254,7 +276,7 @@ int getXHCPRequest(int conn)
         else if ( rval == 0 )
         {
             /*  input not ready after timeout  */
-			XHCP_printXHCPMessage(conn, RES_CONTIMOUT );  // 221 Connexion time-out
+			XHCP_printXHCPResponse(conn, RES_CONTIMOUT );  // 221 Connexion time-out
 			status = 0;
         }
         else
@@ -270,7 +292,7 @@ int getXHCPRequest(int conn)
 			else
 			{
 				printf("Ligne lue : %s\n", buffer);
-				status = Parse_Line(conn, buffer); // On traite la ligne...
+				status = Parse_Line(conn, buffer); // We compute the line...
 			}
 
 		}
@@ -280,25 +302,35 @@ int getXHCPRequest(int conn)
 }
 
 
-void customWelcomeMessage()
+void XHCP_customWelcomeMessage()
 {
 
 	XHCP_response *resp;
-	char *hostName;
-	char *message;
 	char buffer[256];
 
-	gethostname(buffer, 256);
-	hostName = strdup(buffer);
-	
-	sprintf(buffer,"%s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, hostName, XHCP_HAL_version, XHCP_version);
-	char response_msg[256];	
+	sprintf(buffer,"%s.%s Version %s (%s/%s) XHCP %s ready",XHCP_HAL_vendor, XHCP_hostname, XHCP_HAL_version, XHCP_sysname, XHCP_sysarchi, XHCP_version);
 	
 	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != RES_HALWELCOM; resp++);
 	
 	resp->str=strdup(buffer);
+
+}
+
+void XHCP_getSystemInfos()
+{
+
+	char buffer[256];
+
 	
-	free (hostName);
+	sysinfo(SI_HOSTNAME, buffer, 255);
+	XHCP_hostname = strdup(buffer);
+	
+	sysinfo(SI_SYSNAME, buffer, 255);
+	XHCP_sysname = strdup(buffer);
+
+	sysinfo(SI_ARCHITECTURE, buffer, 255);
+	XHCP_sysarchi = strdup(buffer);
+
 	
 }
 
@@ -310,7 +342,8 @@ int XHCP_server(int argc, char *argv[])
 	int retStatus;
     
 
-    
+ 	XHCP_getSystemInfos();
+   
 	
 	
     /*  Create socket  */
@@ -335,7 +368,7 @@ int XHCP_server(int argc, char *argv[])
 		Error_Quit("Call to listen failed.");
     
     
-	customWelcomeMessage();
+	XHCP_customWelcomeMessage();
 	
 	
     /*  Loop infinitely to accept and service connections  */
@@ -348,14 +381,13 @@ int XHCP_server(int argc, char *argv[])
         if ( (conn = accept(listener, NULL, NULL)) < 0 )
 			Error_Quit("Error calling accept()");
         
-        XHCP_printXHCPMessage(conn, RES_HALWELCOM );  // 
-		//XHCP_printCustomMessage(conn, 200, "%s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
+        XHCP_printXHCPResponse(conn, RES_HALWELCOM );  // 
 	
 		while  ( (retStatus = getXHCPRequest(conn)) > 0 );
 		
 		if ( retStatus == 0 )
 		{
-			XHCP_printXHCPMessage(conn, RES_CLOCONBYE );  // Closing connection - good bye
+			XHCP_printXHCPResponse(conn, RES_CLOCONBYE );  // Closing connection - good bye
 		}
     
         /*  If we get here, we are still in the parent process,
@@ -370,13 +402,29 @@ int XHCP_server(int argc, char *argv[])
     return EXIT_FAILURE;    /*  We shouldn't get here  */
 }
 
-EXT_XHCP_SERVER XHCPcmd_QUIT ( int argc, char **argv)
+int XHCPcmd_QUIT (int sockd, int argc, char **argv)
 {
 	return 0;
 }
 
-EXT_XHCP_SERVER XHCPcmd_CAPABILITIES ( int argc, char **argv)
+int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
 {
+	int s = 0;
 	
+
+	if ( argc>1)
+	{
+		toUpper(argv[1]);
+	
+		if ( strcmp(argv[1],"SCRIPTING") == 0 )
+			s = 1;
+	}
+		
+	XHCP_printMessage(sockd, s?241:236, "--000U0" );
+	
+	if (s) 
+		XHCP_print(sockd, "." );
+
+
 	return 1;
 }

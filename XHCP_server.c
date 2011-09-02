@@ -15,7 +15,9 @@
 #include <arpa/inet.h>        /*  inet (3) funtions         */
 #include <unistd.h>           /*  misc. UNIX functions      */
 #include <sys/time.h>         /*  For select()  */
-#include <sys/systeminfo.h>
+//#include <sys/systeminfo.h>
+//#include <sys/sysinfo.h>
+#include <sys/utsname.h>
 
 #include "XHCP_server.h"
 
@@ -321,8 +323,17 @@ void XHCP_getSystemInfos()
 
 	char buffer[256];
 
+	struct utsname sys_infos;
 	
-	sysinfo(SI_HOSTNAME, buffer, 255);
+	
+	if ( (uname(&sys_infos)) != 0 )
+		Error_Quit("Couldn't read system informations.");
+	
+	XHCP_hostname = strdup(sys_infos.nodename);
+	XHCP_sysname = strdup(sys_infos.sysname);
+	XHCP_sysarchi = strdup(sys_infos.machine);
+	
+	/*sysinfo(SI_HOSTNAME, buffer, 255);
 	XHCP_hostname = strdup(buffer);
 	
 	sysinfo(SI_SYSNAME, buffer, 255);
@@ -330,7 +341,7 @@ void XHCP_getSystemInfos()
 
 	sysinfo(SI_ARCHITECTURE, buffer, 255);
 	XHCP_sysarchi = strdup(buffer);
-
+*/
 	
 }
 

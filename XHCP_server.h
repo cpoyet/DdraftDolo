@@ -147,6 +147,7 @@ typedef struct
 } XHCP_response;
 
 EXT_XHCP_SERVER XHCPcmd_QUIT ( int, char **);
+EXT_XHCP_SERVER XHCPcmd_CAPABILITIES ( int, char **);
 
 #ifndef _XHCP_SERVER_C_
 
@@ -158,7 +159,7 @@ EXT_XHCP_SERVER XHCP_response *XHCP_responseList;
 EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_ADDEVENT        , "ADDEVENT"         , NULL }, 
 				{ CMD_ADDSINGLEEVENT  , "ADDSINGLEEVENT"   , NULL },  
-				{ CMD_CAPABILITIES    , "CAPABILITIES"     , NULL },
+				{ CMD_CAPABILITIES    , "CAPABILITIES"     , XHCPcmd_CAPABILITIES },
 				{ CMD_CLEARERRLOG     , "CLEARERRLOG"      , NULL },    
 				{ CMD_DELDEVCONFIG    , "DELDEVCONFIG"     , NULL },
 				{ CMD_DELEVENT        , "DELEVENT"         , NULL }, 

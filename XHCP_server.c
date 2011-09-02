@@ -163,7 +163,9 @@ int Parse_Line(int conn, char *buffer)
 				*c= *c-32;
 		}
 
-		for ( cmd = XHCP_commandList; cmd->id != END_CMD || strcmp (argv[0], cmd->str) != 0; cmd++ );
+		for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
+			if ( strcmp (argv[0], cmd->str) == 0 ) break;
+			
 		if ( cmd->id == END_CMD )
 		{
 			XHCP_printMessage(conn, RES_COMNOTREC );  // 500 Command not recognised

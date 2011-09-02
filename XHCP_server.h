@@ -136,7 +136,7 @@ typedef struct
 {
 	XHCP_command_id id;
 	char *str;
-	int ( *fnct ) ( int, char * [] );
+	int ( *fnct ) ( int, int, char * [] );
 } XHCP_command;
 
 typedef struct
@@ -146,8 +146,18 @@ typedef struct
 	char *str;
 } XHCP_response;
 
-EXT_XHCP_SERVER XHCPcmd_QUIT ( int, char **);
-EXT_XHCP_SERVER XHCPcmd_CAPABILITIES ( int, char **);
+
+/* Prototypes ********************************************************************/
+EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
+
+
+/* Variables globales ************************************************************/
+EXT_XHCP_SERVER char *XHCP_sysname;
+EXT_XHCP_SERVER char *XHCP_hostname;
+EXT_XHCP_SERVER char *XHCP_sysarchi;
+
+
 
 #ifndef _XHCP_SERVER_C_
 

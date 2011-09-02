@@ -15,6 +15,12 @@
 
 #include <stdio.h>
 
+
+#define MAX_CMD_ARGS		(16)
+#define MAX_REQ_LINE		(1024)
+
+
+
 EXT_XHCP_SERVER enum _XHCP_command_id {	CMD_ADDEVENT        , 
 				CMD_ADDSINGLEEVENT  , 
 				CMD_CAPABILITIES    , 
@@ -130,7 +136,7 @@ typedef struct
 {
 	XHCP_command_id id;
 	char *str;
-	int ( *fnct ) ( int, void * [] );
+	int ( *fnct ) ( int, char * [] );
 } XHCP_command;
 
 typedef struct
@@ -140,6 +146,7 @@ typedef struct
 	char *str;
 } XHCP_response;
 
+EXT_XHCP_SERVER XHCPcmd_QUIT ( int, char **);
 
 #ifndef _XHCP_SERVER_C_
 
@@ -191,7 +198,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_SETGLOBAL       , "SETGLOBAL"        , NULL },  
 				{ CMD_SETRULE         , "SETRULE"          , NULL },
 				{ CMD_SETSETTING      , "SETSETTING"       , NULL },   
-				{ CMD_QUIT            , "QUIT"             , NULL },   
+				{ CMD_QUIT            , "QUIT"             , XHCPcmd_QUIT },   
 				{ END_CMD             , NULL               , NULL }  };
 				
 EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {

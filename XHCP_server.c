@@ -20,7 +20,6 @@
 
 /*  Global macros/variables  */
 
-#define MAX_REQ_LINE         (1024)
 
 #define XHCP_HAL_vendor "XPL-XPLHAL"
 #define XHCP_HAL_device "SERVER1"
@@ -126,9 +125,72 @@ void XHCP_printMessage(int sockd, XHCP_response_id messId )
 	
 	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != messId; resp++);
 	
-	sprintf(response_msg, "%d %s\n",resp->num, resp->str);
+	sprintf(response_msg, "%d %s\r\n",resp->num, resp->str);
 	
 	Writeline(sockd, response_msg, strlen(response_msg));
+}
+
+int Parse_Line(int conn, char *buffer)
+{
+	char *line=NULL;
+	char *argv[MAX_CMD_ARGS+1];
+	int  argc=0;
+	
+	char *token, *svgptr;
+	int i;
+	char *c;
+	
+	XHCP_command *cmd;
+	
+	int retValue=0;
+	
+	if ( (line = strdup (buffer)) == NULL )
+		return -1;
+	
+	token = strtok_r(line, " ", &svgptr);
+    if (token != NULL)
+    {
+        argv[argc++]=token;
+		while ( argc<=MAX_CMD_ARGS && (token = strtok_r(NULL, " ", &svgptr)) != NULL  )
+		{
+			argv[argc++]=token;
+		}
+		
+		for ( i=0; i<strlen(argv[0]); i++)
+		{
+			c=&argv[0][i];
+			if ( *c>='a' && *c<='z' )
+				*c= *c-32;
+		}
+
+		for ( cmd = XHCP_commandList; cmd->id != END_CMD || strcmp (argv[0], cmd->str) != 0; cmd++ );
+		if ( cmd->id == END_CMD )
+		{
+			XHCP_printMessage(conn, RES_COMNOTREC );  // 500 Command not recognised
+			retValue = 1;
+		}
+		else
+		{
+			if ( cmd->fnct == NULL )
+			{
+			XHCP_printMessage(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
+			retValue = 1;
+			}
+			else
+				retValue = cmd->fnct(argc, argv);
+		}
+		
+
+ printf("%d arguments :\n",argc);
+	for ( i=0; i<argc; i++ )
+		printf( "%d - %s\n",i, argv[i]);
+
+		
+	}
+	
+	free(line);
+	
+	return retValue;
 }
 
 int getXHCPRequest(int conn)
@@ -141,8 +203,8 @@ int getXHCPRequest(int conn)
 	int status = 0;
     
     
-    /*  Set timeout to 5 seconds  */
-    tv.tv_sec  = 5;
+    /*  Set timeout to 15 seconds  */
+    tv.tv_sec  = 15;
     tv.tv_usec = 0;
     
     
@@ -179,10 +241,14 @@ int getXHCPRequest(int conn)
             Trim(buffer);
             
             if ( buffer[0] == '\0' )
-				continue;
-            printf("Ligne lue : %s\n", buffer);
-            //status = Parse_Line(buffer, XHCP_reqinfo); On traite la ligne...
-			status=1;
+			{
+				status=1;
+			}
+			else
+			{
+				printf("Ligne lue : %s\n", buffer);
+				status = Parse_Line(conn, buffer); // On traite la ligne...
+			}
 
 		}
     } while ( status > 0 );
@@ -253,4 +319,9 @@ int XHCP_server(int argc, char *argv[])
     }
     
     return EXIT_FAILURE;    /*  We shouldn't get here  */
+}
+
+EXT_XHCP_SERVER XHCPcmd_QUIT ( int argc, char **argv)
+{
+	return 0;
 }

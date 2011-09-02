@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <sys/socket.h>       /*  socket definitions        */
 #include <sys/types.h>        /*  socket types              */
 #include <sys/wait.h>         /*  for waitpid()             */
@@ -21,9 +22,9 @@
 /*  Global macros/variables  */
 
 
-#define XHCP_HAL_vendor "XPL-XPLHAL"
-#define XHCP_HAL_device "SERVER1"
-#define XHCP_HAL_version "1.0.3.1"
+#define XHCP_HAL_vendor "xPLHal4L"
+#define XHCP_HAL_device "xPLHal4L"
+#define XHCP_HAL_version "0.0.1"
 #define XHCP_version "1.5"
 
 #define LISTENQ          			(1024)
@@ -116,7 +117,7 @@ ssize_t Writeline(int sockd, const void *vptr, size_t n)
     return n;
 }
 
-void XHCP_printMessage(int sockd, XHCP_response_id messId )
+void XHCP_printXHCPMessage(int sockd, XHCP_response_id messId )
 {
 	XHCP_response *resp;
 	int i;
@@ -129,6 +130,26 @@ void XHCP_printMessage(int sockd, XHCP_response_id messId )
 	
 	Writeline(sockd, response_msg, strlen(response_msg));
 }
+
+void XHCP_printCustomMessage(int sockd, int messNum, char *Libelle, ... )
+{
+	va_list Marker;
+	char response_msg[256];	
+	char *tmp;
+	
+	sprintf(response_msg,"%d ", messNum);
+	tmp = response_msg+strlen(response_msg);
+	
+    /* construction du libelle du message */
+    va_start ( Marker, Libelle);
+    vsprintf (tmp, Libelle, Marker);
+    va_end ( Marker);
+
+	strcat(response_msg,"\r\n");
+	
+	Writeline(sockd, response_msg, strlen(response_msg));
+}
+
 
 int Parse_Line(int conn, char *buffer)
 {
@@ -168,14 +189,14 @@ int Parse_Line(int conn, char *buffer)
 			
 		if ( cmd->id == END_CMD )
 		{
-			XHCP_printMessage(conn, RES_COMNOTREC );  // 500 Command not recognised
+			XHCP_printXHCPMessage(conn, RES_COMNOTREC );  // 500 Command not recognised
 			retValue = 1;
 		}
 		else
 		{
 			if ( cmd->fnct == NULL )
 			{
-			XHCP_printMessage(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
+			XHCP_printXHCPMessage(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
 			retValue = 1;
 			}
 			else
@@ -233,7 +254,7 @@ int getXHCPRequest(int conn)
         else if ( rval == 0 )
         {
             /*  input not ready after timeout  */
-			XHCP_printMessage(conn, RES_CONTIMOUT );  // 221 Connexion time-out
+			XHCP_printXHCPMessage(conn, RES_CONTIMOUT );  // 221 Connexion time-out
 			status = 0;
         }
         else
@@ -259,6 +280,28 @@ int getXHCPRequest(int conn)
 }
 
 
+void customWelcomeMessage()
+{
+
+	XHCP_response *resp;
+	char *hostName;
+	char *message;
+	char buffer[256];
+
+	gethostname(buffer, 256);
+	hostName = strdup(buffer);
+	
+	sprintf(buffer,"%s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, hostName, XHCP_HAL_version, XHCP_version);
+	char response_msg[256];	
+	
+	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != RES_HALWELCOM; resp++);
+	
+	resp->str=strdup(buffer);
+	
+	free (hostName);
+	
+}
+
 int XHCP_server(int argc, char *argv[])
 {
     int    listener, conn;
@@ -268,6 +311,8 @@ int XHCP_server(int argc, char *argv[])
     
 
     
+	
+	
     /*  Create socket  */
     if ( (listener = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 		Error_Quit("Couldn't create listening socket.");
@@ -290,6 +335,9 @@ int XHCP_server(int argc, char *argv[])
 		Error_Quit("Call to listen failed.");
     
     
+	customWelcomeMessage();
+	
+	
     /*  Loop infinitely to accept and service connections  */
     
     while ( 1 )
@@ -300,15 +348,14 @@ int XHCP_server(int argc, char *argv[])
         if ( (conn = accept(listener, NULL, NULL)) < 0 )
 			Error_Quit("Error calling accept()");
         
-        XHCP_printMessage(conn, RES_HALWELCOM );  // 
-		//sprintf(response_msg,"200 %s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
-		//Writeline(conn, response_msg, strlen(response_msg));
+        XHCP_printXHCPMessage(conn, RES_HALWELCOM );  // 
+		//XHCP_printCustomMessage(conn, 200, "%s.%s Version %s XHCP %s ready",XHCP_HAL_vendor, XHCP_HAL_device, XHCP_HAL_version, XHCP_version);
 	
 		while  ( (retStatus = getXHCPRequest(conn)) > 0 );
 		
 		if ( retStatus == 0 )
 		{
-			XHCP_printMessage(conn, RES_CLOCONBYE );  // Closing connection - good bye
+			XHCP_printXHCPMessage(conn, RES_CLOCONBYE );  // Closing connection - good bye
 		}
     
         /*  If we get here, we are still in the parent process,
@@ -326,4 +373,10 @@ int XHCP_server(int argc, char *argv[])
 EXT_XHCP_SERVER XHCPcmd_QUIT ( int argc, char **argv)
 {
 	return 0;
+}
+
+EXT_XHCP_SERVER XHCPcmd_CAPABILITIES ( int argc, char **argv)
+{
+	
+	return 1;
 }

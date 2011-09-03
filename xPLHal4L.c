@@ -39,16 +39,18 @@ int getOptions( int argc, char **argv)
 		switch (c)
 		{
             case 'c':
-				printf ("option c with value `%s'\n", optarg);
+				XHCP_setConfigFile(optarg);
 				break;
 			case 'h':
 				printf ("option help\n");
+				printf ("to do ...n");
+				exit(0);
 				break;
 		}
 
 	}
 	
-	return 0;
+	return 1;
 }
 
 int main (int argc, String argv[])

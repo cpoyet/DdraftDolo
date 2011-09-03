@@ -20,6 +20,12 @@
 #define MAX_REQ_LINE		(1024)
 
 
+// Macros
+
+#define XHCP_setConfigFile(V) XHCP_configFile=V
+#define XHCP_getConfigFile() XHCP_configFile
+
+
 
 EXT_XHCP_SERVER enum _XHCP_command_id {	CMD_ADDEVENT        , 
 				CMD_ADDSINGLEEVENT  , 
@@ -150,12 +156,15 @@ typedef struct
 /* Prototypes ********************************************************************/
 EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
+//EXT_XHCP_SERVER int XHCP_setConfigFile(char *);
+//EXT_XHCP_SERVER char *XHCP_getConfigFile();
 
 
 /* Variables globales ************************************************************/
-EXT_XHCP_SERVER char *XHCP_sysname;
-EXT_XHCP_SERVER char *XHCP_hostname;
-EXT_XHCP_SERVER char *XHCP_sysarchi;
+EXT_XHCP_SERVER char *XHCP_sysName;
+EXT_XHCP_SERVER char *XHCP_hostName;
+EXT_XHCP_SERVER char *XHCP_sysArchi;
+EXT_XHCP_SERVER char *XHCP_configFile;
 
 
 

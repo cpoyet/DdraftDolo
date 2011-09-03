@@ -19,6 +19,8 @@
 //#include <sys/sysinfo.h>
 #include <sys/utsname.h>
 
+#include <roxml.h>
+
 #include "XHCP_server.h"
 
 /*  Global macros/variables  */
@@ -30,9 +32,9 @@
 #define XHCP_version "1.5"
 
 #define LISTENQ          			(1024)
-
 #define XHCP_SERVER_PORT            (3865)
 
+node_t *domConfig;
 
 
 void Error_Quit(char const * msg)
@@ -310,7 +312,7 @@ void XHCP_customWelcomeMessage()
 	XHCP_response *resp;
 	char buffer[256];
 
-	sprintf(buffer,"%s.%s Version %s (%s/%s) XHCP %s ready",XHCP_HAL_vendor, XHCP_hostname, XHCP_HAL_version, XHCP_sysname, XHCP_sysarchi, XHCP_version);
+	sprintf(buffer,"%s.%s Version %s (%s/%s) XHCP %s ready",XHCP_HAL_vendor, XHCP_hostName, XHCP_HAL_version, XHCP_sysName, XHCP_sysArchi, XHCP_version);
 	
 	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != RES_HALWELCOM; resp++);
 	
@@ -329,23 +331,34 @@ void XHCP_getSystemInfos()
 	if ( (uname(&sys_infos)) != 0 )
 		Error_Quit("Couldn't read system informations.");
 	
-	XHCP_hostname = strdup(sys_infos.nodename);
-	XHCP_sysname = strdup(sys_infos.sysname);
-	XHCP_sysarchi = strdup(sys_infos.machine);
+	XHCP_hostName = strdup(sys_infos.nodename);
+	XHCP_sysName = strdup(sys_infos.sysname);
+	XHCP_sysArchi = strdup(sys_infos.machine);
 	
 	/*sysinfo(SI_HOSTNAME, buffer, 255);
-	XHCP_hostname = strdup(buffer);
+	XHCP_hostName = strdup(buffer);
 	
 	sysinfo(SI_SYSNAME, buffer, 255);
-	XHCP_sysname = strdup(buffer);
+	XHCP_sysName = strdup(buffer);
 
 	sysinfo(SI_ARCHITECTURE, buffer, 255);
-	XHCP_sysarchi = strdup(buffer);
+	XHCP_sysArchi = strdup(buffer);
 */
 	
 }
+/*
+void XHCP_setConfigFile (char * fileName)
+{
+	XHCP_configFile = fileName;
+	return 0;
+}
+char * XHCP_getConfigFile ()
+{
+	return XHCP_configFile;
+}
+*/
 
-int XHCP_server(int argc, char *argv[])
+int XHCP_server(node_t* argXmlConfig)
 {
     int    listener, conn;
     pid_t  pid;
@@ -355,6 +368,19 @@ int XHCP_server(int argc, char *argv[])
 
  	XHCP_getSystemInfos();
    
+	if ( argXmlConfig == NULL )
+	{
+		char *fileName;
+		if ( (fileName = XHCP_getConfigFile()) == NULL )
+			Error_Quit("Unable to find XHCP config file");
+			
+		domConfig = roxml_load_doc(fileName);
+
+	}
+	else
+	{
+		domConfig = argXmlConfig;
+	}
 	
 	
     /*  Create socket  */

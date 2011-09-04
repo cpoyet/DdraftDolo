@@ -322,7 +322,7 @@ int getXHCPRequest(int conn)
             /*  We have an input line waiting, so retrieve it  */
             Readline(conn, buffer, MAX_REQ_LINE - 1);
             
-			/* If we not waiting for complements data the function handler should be not null*/
+			/* If we are not waiting for additional data the function handler should be not null*/
 			if ( additionalDataHandler == NULL )
 			{
 				Trim(buffer,0);
@@ -337,7 +337,6 @@ int getXHCPRequest(int conn)
 			}
 			else
 			{
-printf("Mode complements\n");
 				Trim(buffer,1);
 				/* The handler is activate so all lignes are added in buffer */
 				if ( buffer[0] == '.' &&  buffer[1] == '\0')
@@ -558,8 +557,23 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
 
 int XHCPcmd_PUTCONFIGXML_handle (int sockd, char *cfgData)
 {
-printf("[%s]\n",cfgData);
+	node_t *tmp;
+printf("Entree XHCPcmd_PUTCONFIGXML_handle\n");
+	if ( (tmp = roxml_load_buf(cfgData)) == NULL )
+	{
+		XHCP_printXHCPResponse(sockd, RES_SYNTAXERR); // Syntax Error
+		return -1;
+	}
 
+printf("Chargement XML OK\n");
+	roxml_close(rootConfig);
+printf("Close OK\n");
+	rootConfig = tmp;
+
+	
+	loadConfig(rootConfig);
+printf("loadConfig OK\n");
+	
 	XHCP_printXHCPResponse(sockd, RES_CFGDOCUPL ); // Configuration document uploaded
 
 	return 0;

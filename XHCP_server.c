@@ -20,6 +20,7 @@
 #include <sys/utsname.h>
 
 #include <roxml.h>
+#include <xPL.h>
 
 #include "XHCP_server.h"
 #include "xPLHal4L.h"
@@ -36,6 +37,9 @@
 #define XHCP_BUFFER_SZ            (256)
 
 node_t *domConfig;
+
+int ( *cmdLineCpltHandler) ( char * ) = NULL;
+
 
 
 void Error_Quit(char const * msg)
@@ -291,15 +295,37 @@ int getXHCPRequest(int conn)
             Readline(conn, buffer, MAX_REQ_LINE - 1);
             Trim(buffer);
             
-            if ( buffer[0] == '\0' )
+			/* If we not waiting for complements data */
+			if ( cmdLineCpltHandler == NULL )
 			{
-				status=1;
+				if ( buffer[0] == '\0' )
+					status=1; // We continue....
+				else
+				{
+					printf("Ligne lue : %s\n", buffer);
+					status = Parse_Line(conn, buffer); // We compute the line...
+				}
 			}
 			else
 			{
-				printf("Ligne lue : %s\n", buffer);
-				status = Parse_Line(conn, buffer); // We compute the line...
+				
+				if ( buffer[0] == '.' &&  buffer[1] == '\0')
+				{
+					cmdLineCpltHandler ( cpltBuffer ); 
+					lastEmptyLine=0;
+					cmdLineCpltHandler = NULL;
+				}
+				else if ( buffer[0] == '\0' )
+					lastEmptyLine=1;
+				else
+				{
+					lastEmptyLine=0;
+					bufferadd cpltBuffer
+				}
+				
+				
 			}
+
 
 		}
     } while ( status > 0 );
@@ -348,17 +374,7 @@ void XHCP_getSystemInfos()
 */
 	
 }
-/*
-void XHCP_setConfigFile (char * fileName)
-{
-	XHCP_configFile = fileName;
-	return 0;
-}
-char * XHCP_getConfigFile ()
-{
-	return XHCP_configFile;
-}
-*/
+
 int loadConfig(node_t* argXmlConfig)
 {
 	node_t **result;
@@ -397,70 +413,8 @@ int loadConfig(node_t* argXmlConfig)
 	roxml_release(RELEASE_LAST);
 	printf("XHCP_connexionTimeOut = %d\n",XHCP_connexionTimeOut);
 	
-	
-	/*
 
-int nb_eml;
-
-printf("%d elements trouve\n",nb_eml);
-
-node_t *toto = result[0];
-char *nodeType;
-switch ( roxml_get_type(toto) )
-{
- case ROXML_ATTR_NODE:
-	nodeType = "attribute nodes";
-	break;
- case ROXML_TXT_NODE:
-	nodeType = "text nodes";
-	break;
- case ROXML_PI_NODE:
-	nodeType = "processing_intruction nodes";
-	break;
- case ROXML_CMT_NODE:
-	nodeType = " comment nodes";
-	break;
- case ROXML_ELM_NODE:
-	nodeType = "element nodes";
-	break;
- default:
-	nodeType = "node type indéfini";
-}
-printf("%s\n", nodeType);
-
-node_t *tata = roxml_get_attr(toto, "delay", 0);
-
-switch ( roxml_get_type(tata) )
-{
- case ROXML_ATTR_NODE:
-	nodeType = "attribute nodes";
-	break;
- case ROXML_TXT_NODE:
-	nodeType = "text nodes";
-	break;
- case ROXML_PI_NODE:
-	nodeType = "processing_intruction nodes";
-	break;
- case ROXML_CMT_NODE:
-	nodeType = " comment nodes";
-	break;
- case ROXML_ELM_NODE:
-	nodeType = "element nodes";
-	break;
- default:
-	nodeType = "node type indéfini";
-}
-printf("%s\n", nodeType);
-
-char buffer[50];
-int sz;
-char *zaza;
-zaza = roxml_get_content ( tata, buffer, 49, &sz );	
-
-printf("content : \"%s\"\n",zaza);
-
-*/
-
+	return 0;
 }
 
 int XHCP_server(node_t* argXmlConfig)

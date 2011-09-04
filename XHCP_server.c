@@ -554,6 +554,11 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
 	
 		if ( strcmp(argv[1],"SCRIPTING") == 0 )
 			s = 1;
+		else
+		{
+			XHCP_printXHCPResponse(sockd, RES_SYNTAXERR );  // Syntax error
+			return 1;
+		}	
 	}
 		
 	XHCP_printMessage(sockd, s?241:236, "--000U0" );

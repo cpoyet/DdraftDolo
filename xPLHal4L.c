@@ -75,6 +75,6 @@ int main (int argc, String argv[])
         exit (1);
     }
 	
-	 XHCP_server(0, NULL);
+	 XHCP_server(NULL);
 
 }

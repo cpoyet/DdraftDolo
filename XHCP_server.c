@@ -20,7 +20,7 @@
 #include <sys/utsname.h>
 
 #include <roxml.h>
-#include <xPL.h>
+//#include <xPL.h>
 
 #include "XHCP_server.h"
 #include "xPLHal4L.h"
@@ -38,7 +38,7 @@
 
 node_t *domConfig;
 
-int ( *cmdLineCpltHandler) ( char * ) = NULL;
+int ( *additionalDataHandler) ( int, char * ) = NULL;
 
 
 
@@ -89,11 +89,11 @@ ssize_t Readline(int sockd, void *vptr, size_t maxlen)
 
 /*  Removes trailing whitespace from a string  */
 
-int Trim(char * buffer)
+int Trim(char * buffer, int mode)
 {
     int n = strlen(buffer) - 1;
     
-    while ( !isalnum(buffer[n]) && n >= 0 )
+    while ( !isalnum(buffer[n]) && ( mode == 0 || (mode==1 && buffer[n] != '.')) && n >= 0 )
 		buffer[n--] = '\0';
     
     return 0;
@@ -248,6 +248,32 @@ int Parse_Line(int conn, char *buffer)
 	return retValue;
 }
 
+char *addBuffer( char *buffer, char*str)
+{
+	int szs;
+	int szb;
+	
+	if ( str == NULL )
+		return buffer;
+		
+	szs = strlen(str);
+	
+	if ( buffer == NULL )
+	{
+		buffer = (char *)malloc((sizeof(char)*szs)+2);
+		buffer[0]='\0';
+	}
+	else
+	{
+		szb= strlen(buffer);
+		buffer = (char *)realloc(buffer,(sizeof(char)*(szs+szb))+2);
+	}
+	
+	sprintf (buffer, "%s%s\n", buffer, str);
+	
+	return buffer;
+}
+
 int getXHCPRequest(int conn)
 {
     
@@ -256,6 +282,8 @@ int getXHCPRequest(int conn)
     fd_set fds;
     struct timeval tv;
 	int status = 0;
+	int lastLineIsEmpty = 0;
+	char *additionalDataBuffer=NULL;
     
     
     /*  Set timeout  */
@@ -293,11 +321,12 @@ int getXHCPRequest(int conn)
         {
             /*  We have an input line waiting, so retrieve it  */
             Readline(conn, buffer, MAX_REQ_LINE - 1);
-            Trim(buffer);
             
-			/* If we not waiting for complements data */
-			if ( cmdLineCpltHandler == NULL )
+			/* If we not waiting for complements data the function handler should be not null*/
+			if ( additionalDataHandler == NULL )
 			{
+				Trim(buffer,0);
+				
 				if ( buffer[0] == '\0' )
 					status=1; // We continue....
 				else
@@ -308,19 +337,27 @@ int getXHCPRequest(int conn)
 			}
 			else
 			{
-				
+printf("Mode complements\n");
+				Trim(buffer,1);
+				/* The handler is activate so all lignes are added in buffer */
 				if ( buffer[0] == '.' &&  buffer[1] == '\0')
 				{
-					cmdLineCpltHandler ( cpltBuffer ); 
-					lastEmptyLine=0;
-					cmdLineCpltHandler = NULL;
+					additionalDataHandler (conn, additionalDataBuffer ); 
+					lastLineIsEmpty=0;
+					additionalDataHandler = NULL;
+					free (additionalDataBuffer);
+					additionalDataBuffer = NULL;
 				}
-				else if ( buffer[0] == '\0' )
-					lastEmptyLine=1;
+				else if ( buffer[0] == '\0' ) /* Haha... a empty line ? We note it in case if the nest contain a '.' */
+				{
+					lastLineIsEmpty=1;
+					additionalDataBuffer = addBuffer(additionalDataBuffer, buffer);
+				}
 				else
 				{
-					lastEmptyLine=0;
-					bufferadd cpltBuffer
+					/* Adding the line to the buffer */
+					lastLineIsEmpty=0;
+					additionalDataBuffer = addBuffer(additionalDataBuffer, buffer);
 				}
 				
 				
@@ -518,3 +555,22 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
 
 	return 1;
 }
+
+int XHCPcmd_PUTCONFIGXML_handle (int sockd, char *cfgData)
+{
+printf("[%s]\n",cfgData);
+
+	XHCP_printXHCPResponse(sockd, RES_CFGDOCUPL ); // Configuration document uploaded
+
+	return 0;
+}
+
+int XHCPcmd_PUTCONFIGXML (int sockd, int argc, char **argv)
+{
+	XHCP_printXHCPResponse(sockd, RES_ENTCFGDOC ); // Enter configuration document, end with <CrLf>.<CrLf>
+	
+	XHCP_setAdditionalDataHandler(XHCPcmd_PUTCONFIGXML_handle);
+
+	return 1;
+}
+

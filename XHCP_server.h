@@ -25,6 +25,7 @@
 #define XHCP_setConfigFile(V) XHCP_configFile=V
 #define XHCP_getConfigFile() XHCP_configFile
 
+#define XHCP_setAdditionalDataHandler(V) additionalDataHandler=V
 
 
 EXT_XHCP_SERVER enum _XHCP_command_id {	CMD_ADDEVENT        , 
@@ -156,9 +157,8 @@ typedef struct
 /* Prototypes ********************************************************************/
 EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
-/* EXT_XHCP_SERVER int XHCP_setConfigFile(char *);
-EXT_XHCP_SERVER char *XHCP_getConfigFile();
- */
+EXT_XHCP_SERVER int XHCPcmd_PUTCONFIGXML ( int, int, char **);
+
 
 /* Variables globales ************************************************************/
 EXT_XHCP_SERVER char *XHCP_sysName;
@@ -207,7 +207,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_LISTSINGLEEVENTS, "LISTSINGLEEVENTS" , NULL },    
 				{ CMD_LISTSUBS        , "LISTSUBS"         , NULL }, 
 				{ CMD_MODE            , "MODE"             , NULL },  
-				{ CMD_PUTCONFIGXML    , "PUTCONFIGXML"     , NULL },
+				{ CMD_PUTCONFIGXML    , "PUTCONFIGXML"     , XHCPcmd_PUTCONFIGXML },
 				{ CMD_PUTDEVCONFIG    , "PUTDEVCONFIG"     , NULL },
 				{ CMD_PUTSCRIPT       , "PUTSCRIPT"        , NULL },  
 				{ CMD_RELOAD          , "RELOAD"           , NULL },    

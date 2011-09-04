@@ -34,6 +34,8 @@
 #define LISTENQ          			(1024)
 #define XHCP_SERVER_PORT            (3865)
 
+#define XHCP_BUFFER_SZ            (256)
+
 node_t *domConfig;
 
 
@@ -222,7 +224,8 @@ int Parse_Line(int conn, char *buffer)
 		{
 			if ( cmd->fnct == NULL )
 			{
-			XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
+//			XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
+			XHCP_printMessage(conn, 500, "Command not implemented" );
 			retValue = 1;
 			}
 			else
@@ -252,8 +255,8 @@ int getXHCPRequest(int conn)
 	int status = 0;
     
     
-    /*  Set timeout to 15 seconds  */
-    tv.tv_sec  = 15;
+    /*  Set timeout  */
+    tv.tv_sec  = XHCP_connexionTimeOut;
     tv.tv_usec = 0;
     
     
@@ -357,6 +360,113 @@ char * XHCP_getConfigFile ()
 	return XHCP_configFile;
 }
 */
+int loadConfig(node_t* argXmlConfig)
+{
+	node_t **result;
+	int nb_result;
+	char buffer[XHCP_BUFFER_SZ];
+	int sz_buffer;
+
+	printf("Loading XHCP server configuration...\n");
+
+	if ( argXmlConfig == NULL )
+	{
+		char *fileName;
+		if ( (fileName = XHCP_getConfigFile()) == NULL )
+			Error_Quit("Unable to find XHCP config file");
+			
+		domConfig = roxml_load_doc(fileName);
+	}
+	else
+	{
+		domConfig = argXmlConfig;
+	}
+
+	
+	result = roxml_xpath( domConfig, "//XHCPserver/ConnectionTimeOut[@delay]", &nb_result);
+	if ( nb_result == 1 )
+	{
+		char *zaza = roxml_get_content ( roxml_get_attr(result[0], "delay", 0), buffer, XHCP_BUFFER_SZ, &sz_buffer );	
+		XHCP_connexionTimeOut = atoi(zaza);
+
+		if ( XHCP_connexionTimeOut < 5 )
+			XHCP_connexionTimeOut=5;
+	}
+	else if ( nb_result == 0)
+	{
+		XHCP_connexionTimeOut = 5;
+	}
+	else
+		Error_Quit("Erroe parsing XHCP config file (ConnectionTimeOut)");
+	
+	roxml_release(RELEASE_LAST);
+	printf("XHCP_connexionTimeOut = %d\n",XHCP_connexionTimeOut);
+	
+	
+	/*
+
+int nb_eml;
+
+printf("%d elements trouve\n",nb_eml);
+
+node_t *toto = result[0];
+char *nodeType;
+switch ( roxml_get_type(toto) )
+{
+ case ROXML_ATTR_NODE:
+	nodeType = "attribute nodes";
+	break;
+ case ROXML_TXT_NODE:
+	nodeType = "text nodes";
+	break;
+ case ROXML_PI_NODE:
+	nodeType = "processing_intruction nodes";
+	break;
+ case ROXML_CMT_NODE:
+	nodeType = " comment nodes";
+	break;
+ case ROXML_ELM_NODE:
+	nodeType = "element nodes";
+	break;
+ default:
+	nodeType = "node type indéfini";
+}
+printf("%s\n", nodeType);
+
+node_t *tata = roxml_get_attr(toto, "delay", 0);
+
+switch ( roxml_get_type(tata) )
+{
+ case ROXML_ATTR_NODE:
+	nodeType = "attribute nodes";
+	break;
+ case ROXML_TXT_NODE:
+	nodeType = "text nodes";
+	break;
+ case ROXML_PI_NODE:
+	nodeType = "processing_intruction nodes";
+	break;
+ case ROXML_CMT_NODE:
+	nodeType = " comment nodes";
+	break;
+ case ROXML_ELM_NODE:
+	nodeType = "element nodes";
+	break;
+ default:
+	nodeType = "node type indéfini";
+}
+printf("%s\n", nodeType);
+
+char buffer[50];
+int sz;
+char *zaza;
+zaza = roxml_get_content ( tata, buffer, 49, &sz );	
+
+printf("content : \"%s\"\n",zaza);
+
+*/
+
+}
 
 int XHCP_server(node_t* argXmlConfig)
 {
@@ -367,21 +477,10 @@ int XHCP_server(node_t* argXmlConfig)
     
 
  	XHCP_getSystemInfos();
-   
-	if ( argXmlConfig == NULL )
-	{
-		char *fileName;
-		if ( (fileName = XHCP_getConfigFile()) == NULL )
-			Error_Quit("Unable to find XHCP config file");
-			
-		domConfig = roxml_load_doc(fileName);
-
-	}
-	else
-	{
-		domConfig = argXmlConfig;
-	}
 	
+	loadConfig(argXmlConfig);
+   
+
 	
     /*  Create socket  */
     if ( (listener = socket(AF_INET, SOCK_STREAM, 0)) < 0 )

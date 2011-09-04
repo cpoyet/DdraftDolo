@@ -20,7 +20,7 @@
 #define MAX_REQ_LINE		(1024)
 
 
-// Macros
+/* Macros ********************************************************/
 
 #define XHCP_setConfigFile(V) XHCP_configFile=V
 #define XHCP_getConfigFile() XHCP_configFile
@@ -156,9 +156,9 @@ typedef struct
 /* Prototypes ********************************************************************/
 EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
-//EXT_XHCP_SERVER int XHCP_setConfigFile(char *);
-//EXT_XHCP_SERVER char *XHCP_getConfigFile();
-
+/* EXT_XHCP_SERVER int XHCP_setConfigFile(char *);
+EXT_XHCP_SERVER char *XHCP_getConfigFile();
+ */
 
 /* Variables globales ************************************************************/
 EXT_XHCP_SERVER char *XHCP_sysName;
@@ -166,6 +166,7 @@ EXT_XHCP_SERVER char *XHCP_hostName;
 EXT_XHCP_SERVER char *XHCP_sysArchi;
 EXT_XHCP_SERVER char *XHCP_configFile;
 
+EXT_XHCP_SERVER int XHCP_connexionTimeOut;
 
 
 #ifndef _XHCP_SERVER_C_
@@ -222,7 +223,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ END_CMD             , NULL               , NULL }  };
 				
 EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {
-//                                     ----+----1----+----2----+----3----+----4----+----5
+/*                                     ----+----1----+----2----+----3----+----4----+----5    */
 				{ RES_HALWELCOM, 200, "XPLHal Welcome Banner" },
 				{ RES_RELOADSUC, 201, "Reload successful" },
 				{ RES_SCRIPTEXE, 203, "Script executed" },

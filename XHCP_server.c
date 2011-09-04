@@ -22,13 +22,12 @@
 #include <roxml.h>
 
 #include "XHCP_server.h"
+#include "xPLHal4L.h"
 
 /*  Global macros/variables  */
 
 
-#define XHCP_HAL_vendor "xPLHal4L"
-#define XHCP_HAL_device "xPLHal4L"
-#define XHCP_HAL_version "0.0.1"
+
 #define XHCP_version "1.5"
 
 #define LISTENQ          			(1024)
@@ -315,7 +314,7 @@ void XHCP_customWelcomeMessage()
 	XHCP_response *resp;
 	char buffer[256];
 
-	sprintf(buffer,"%s.%s Version %s (%s/%s) XHCP %s ready",XHCP_HAL_vendor, XHCP_hostName, XHCP_HAL_version, XHCP_sysName, XHCP_sysArchi, XHCP_version);
+	sprintf(buffer,"%s.%s (on %s/%s) Version %s XHCP %s ready",XPLHAL4L_VENDOR, XHCP_hostName, XHCP_sysName, XHCP_sysArchi, XPLHAL4L_VERSION, XHCP_version);
 	
 	for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != RES_HALWELCOM; resp++);
 	
@@ -366,31 +365,27 @@ int loadConfig(node_t* argXmlConfig)
 	int nb_result;
 	char buffer[XHCP_BUFFER_SZ];
 	int sz_buffer;
+	char *xhcp_fileName;
 
 	printf("Loading XHCP server configuration...\n");
-
-	if ( argXmlConfig == NULL )
-	{
-		char *fileName;
-		if ( (fileName = XHCP_getConfigFile()) == NULL )
-			Error_Quit("Unable to find XHCP config file");
-			
-		domConfig = roxml_load_doc(fileName);
-	}
-	else
-	{
-		domConfig = argXmlConfig;
-	}
-
 	
+	if ( (xhcp_fileName = XHCP_getConfigFile()) != NULL )
+		domConfig = roxml_load_doc(xhcp_fileName);
+	else if ( argXmlConfig != NULL )
+		domConfig = argXmlConfig;
+	else
+		Error_Quit("Unable to find XHCP configuration");
+
+
+	/* Time Out */
 	result = roxml_xpath( domConfig, "//XHCPserver/ConnectionTimeOut[@delay]", &nb_result);
 	if ( nb_result == 1 )
 	{
 		char *zaza = roxml_get_content ( roxml_get_attr(result[0], "delay", 0), buffer, XHCP_BUFFER_SZ, &sz_buffer );	
 		XHCP_connexionTimeOut = atoi(zaza);
 
-		if ( XHCP_connexionTimeOut < 5 )
-			XHCP_connexionTimeOut=5;
+		if ( XHCP_connexionTimeOut <= 0 )
+			XHCP_connexionTimeOut=2;
 	}
 	else if ( nb_result == 0)
 	{

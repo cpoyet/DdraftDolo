@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<XHCPserver>
+	<ConnectionTimeOut delay="5" />
+</XHCPserver>

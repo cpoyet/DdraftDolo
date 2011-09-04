@@ -1,0 +1,34 @@
+
+CC=gcc
+CFLAGS=-I/usr/local/include -I./xPLLib -I./libroxml
+LDFLAGS= -L/usr/local/lib -lxnet 
+
+RM=/usr/bin/rm
+MAKE=/usr/bin/make
+MAKEDEPEND=/usr/openwin/bin/makedepend
+
+EXE= xPLHal4L
+SRC= xPLHal4L.c XHCP_server.c
+OBJ=$(SRC:%.c=%.o)
+INC=$(SRC:%.c=%.h)
+
+SUBDIRS= xPLLib libroxml
+ARCHS= libroxml.a ./xPLLib.a
+
+%.o: %.c $(INC)
+	$(CC) $(CFLAGS) -c $<
+
+all:
+	@for i in $(SUBDIRS); do (cd $$i; $(MAKE) all); done
+	@$(MAKE) $(EXE)
+
+$(EXE): $(OBJ)
+	$(CC) $^ $(ARCHS) $(LDFLAGS) -o $@ 
+
+clean:
+	$(RM) -f $(OBJ) core *~
+	@for i in $(SUBDIRS); do (cd $$i; $(MAKE) clean); done
+
+depend:
+	$(MAKEDEPEND) -- $(CFLAGS) -- $(SRC)
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) depend); done

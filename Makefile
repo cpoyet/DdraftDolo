@@ -16,7 +16,7 @@ CC	=	gcc $(CCOPTS)
 LD	= 	gcc $(LDOPTS)
 
 #CMD_LIST = xPL_Hub xPL_Logger xPL_Clock xPL_ConfigClock xPLSend
-CMD_LIST = xPL_Threads xPLHal4L
+CMD_LIST = xPLHal4L
 
 SUBDIR= xPLLib libroxml
 
@@ -45,7 +45,7 @@ xPL_Threads: xPL_Threads.c
 	$(CC) -c xPL_Threads.c -g
 	$(LD) -g -o xPL_Threads xPL_Threads.o ./libroxml/libroxml.a ./xPLLib/xPL.a -lpthread $(LIBS)
 
-xPLHal4L: xPLHal4L.c
+xPLHal4L: xPLHal4L.c XHCP_server.c XHCP_server.h
 	$(CC) -c xPLHal4L.c -g
 	$(CC) -c XHCP_server.c -g
 	$(LD) -g -o xPLHal4L xPLHal4L.o XHCP_server.o ./libroxml/libroxml.a ./xPLLib/xPL.a -lpthread $(LIBS)

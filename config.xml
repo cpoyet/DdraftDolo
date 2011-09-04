@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<XHCPserver>
+	<ConnectionTimeOut delay="60" />
+</XHCPserver>
+ <determinators>
+  <determinator name="vdfvgd" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
+    <input match="all">
+      <timeCondition display_name="premiere condition test" operator="&gt;" value="21:39" />
+    </input>
+    <output>
+      <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action" />
+    </output>
+  </determinator>
+ </determinators>

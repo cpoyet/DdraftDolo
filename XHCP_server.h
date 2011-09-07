@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _XHCP_SERVER_H_
 #define _XHCP_SERVER_H_
 
@@ -158,6 +157,7 @@ typedef struct
 EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_PUTCONFIGXML ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_LISTRULES ( int, int, char **);
 
 
 /* Variables globales ************************************************************/
@@ -201,7 +201,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_LISTGLOBALS     , "LISTGLOBALS"      , NULL },    
 				{ CMD_LISTOPTIONS     , "LISTOPTIONS"      , NULL },    
 				{ CMD_LISTRULEGROUPS  , "LISTRULEGROUPS"   , NULL },  
-				{ CMD_LISTRULES       , "LISTRULES"        , NULL },  
+				{ CMD_LISTRULES       , "LISTRULES"        , XHCPcmd_LISTRULES },  
 				{ CMD_LISTSCRIPTS     , "LISTSCRIPTS"      , NULL },    
 				{ CMD_LISTSETTINGS    , "LISTSETTINGS"     , NULL },
 				{ CMD_LISTSINGLEEVENTS, "LISTSINGLEEVENTS" , NULL },    

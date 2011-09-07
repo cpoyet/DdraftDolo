@@ -48,7 +48,7 @@ xPL_Threads: xPL_Threads.c
 xPLHal4L: xPLHal4L.c XHCP_server.c XHCP_server.h
 	$(CC) -c xPLHal4L.c -g
 	$(CC) -c XHCP_server.c -g
-	$(LD) -g -o xPLHal4L xPLHal4L.o XHCP_server.o ./libroxml/libroxml.a ./xPLLib/xPL.a -lpthread $(LIBS)
+	$(LD) -g -o xPLHal4L xPLHal4L.o XHCP_server.o ./libroxml/libroxml.a ./xPLLib/xPL.a -lpthread -luuid $(LIBS)
 
 rebuild: clean all
 

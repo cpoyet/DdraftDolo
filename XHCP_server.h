@@ -158,6 +158,7 @@ EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_PUTCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_LISTRULES ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_GETRULE ( int, int, char **);
 
 
 /* Variables globales ************************************************************/
@@ -192,7 +193,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_GETERRLOG       , "GETERRLOG"        , NULL },  
 				{ CMD_GETEVENT        , "GETEVENT"         , NULL }, 
 				{ CMD_GETGLOBAL       , "GETGLOBAL"        , NULL },  
-				{ CMD_GETRULE         , "GETRULE"          , NULL },
+				{ CMD_GETRULE         , "GETRULE"          , XHCPcmd_GETRULE },
 				{ CMD_GETSCRIPT       , "GETSCRIPT"        , NULL },  
 				{ CMD_GETSETTING      , "GETSETTING"       , NULL },   
 				{ CMD_LISTALLDEVS     , "LISTALLDEVS"      , NULL },    
@@ -233,7 +234,7 @@ EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {
 				{ RES_ERRLOGFOL, 207, "Error log follows" },
 				{ RES_REQSETFOL, 208, "Requested setting follows" },
 				{ RES_CFGDOCFOL, 209, "Configuration document follows" },
-				{ RES_REQSCRFOL, 210, "Requested script follows" },
+				{ RES_REQSCRFOL, 210, "Requested script/rule follows" },
 				{ RES_SCRSAVSUC, 211, "Script saved successfully" },
 				{ RES_LSTSCRFOL, 212, "List of scripts follows" },
 				{ RES_XPLMSGTRA, 213, "XPL message transmitted" },
@@ -274,7 +275,7 @@ EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {
 				{ RES_RELODFAIL, 401, "Reload failed" },
 				{ RES_SCRNOTEXE, 403, "Script not executed" },
 				{ RES_NOSUCHSET, 405, "No such setting" },
-				{ RES_NOSUCHSCR, 410, "No such script" },
+				{ RES_NOSUCHSCR, 410, "No such script/rule" },
 				{ RES_NOCONFAVI, 416, "No config available for specified device" },
 				{ RES_NOSUCHDEV, 417, "No such device" },
 				{ RES_NOVENINFO, 418, "No vendor information available for specified device." },

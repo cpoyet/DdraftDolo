@@ -37,6 +37,12 @@
 
 #define XHCP_BUFFER_SZ            (256)
 
+//Because UUID_PRINTABLE_STRING_LENGTH is not defined on Linux libuuid
+#ifndef UUID_PRINTABLE_STRING_LENGTH
+#define UUID_PRINTABLE_STRING_LENGTH 37
+#endif
+
+
 node_t *domConfig;
 
 int ( *additionalDataHandler) ( int, char * ) = NULL;
@@ -613,12 +619,86 @@ int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
             char *champ1 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "guid", 0), buffer, XHCP_BUFFER_SZ, &sz_buffer );
             char *champ2 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "name", 0), champ1 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
             char *champ3 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "enabled", 0), champ2 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
-            
-            XHCP_print(sockd, "%s\t%s\t%s",champ1,champ2,champ3);
-//String identi = xPL_getFairlyUniqueIdent();
+ 
+			XHCP_print(sockd, "%s\t%s\t%s",champ1,champ2,champ3);
         }
     }
     
     XHCP_print(sockd, ".");
     return 1;
 }
+
+
+int xhcp_roxml_commit_changes(node_t *n, char ** buffer)
+{
+	int size = 0;
+	int len = 0;
+	FILE *fout = NULL;
+int XHCP_ROXML_LONG_LEN = 512;
+	
+	
+	if(n) {
+		len = XHCP_ROXML_LONG_LEN;
+			*buffer = (char*)malloc(XHCP_ROXML_LONG_LEN);
+			memset(*buffer, 0, XHCP_ROXML_LONG_LEN);
+
+		roxml_write_node(n, fout, buffer, 1, 0, &size, &len);
+
+			char * ptr = NULL;
+			len -= XHCP_ROXML_LONG_LEN;
+			ptr = *buffer + len;
+			len += strlen(ptr);
+
+
+	}
+
+	return len;
+}
+
+
+
+int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
+{
+    node_t **rulesNodesLst;
+    char buffer[XHCP_BUFFER_SZ];
+    int sz_buffer;
+    int nb;
+	
+	char *writeBuffer = NULL;
+    
+    
+	if (argc != 2)
+	{
+		XHCP_printXHCPResponse (sockd, RES_SYNTAXERR ); // Syntax Error
+		return 1;
+	}
+	
+    sprintf(buffer,"//determinator[@guid='%s']",argv[1]);
+	
+	printf("%s\n",buffer);
+	
+    if ( (rulesNodesLst = roxml_xpath (rootConfig, buffer, &nb )) == NULL )
+		XHCP_printXHCPResponse (sockd, RES_NOSUCHSCR ); // No such script/rule
+	else
+    {
+		printf("%d rules trouvé\n",nb);
+		XHCP_printXHCPResponse (sockd, RES_REQSCRFOL ); // Requested script/rule follows
+	
+		//sz_buffer = roxml_commit_changes(rulesNodesLst[0], NULL, &writeBuffer, 1);
+		sz_buffer = xhcp_roxml_commit_changes(rulesNodesLst[0],&writeBuffer);
+		printf("sz=%d len=%d\n",sz_buffer,strlen(writeBuffer));
+		
+		printf("%s\n",writeBuffer);
+		XHCP_print(sockd, writeBuffer);
+		
+		XHCP_print(sockd, ".");
+		
+		free(writeBuffer);
+    }
+
+	
+    
+    return 1;
+}
+
+

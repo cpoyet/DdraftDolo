@@ -18,6 +18,7 @@
 //#include <sys/systeminfo.h>
 //#include <sys/sysinfo.h>
 #include <sys/utsname.h>
+#include <uuid/uuid.h>
 
 #include <roxml.h>
 //#include <xPL.h>
@@ -31,7 +32,7 @@
 
 #define XHCP_version "1.5"
 
-#define LISTENQ          			(1024)
+#define LISTENQ              		(1024)
 #define XHCP_SERVER_PORT            (3865)
 
 #define XHCP_BUFFER_SZ            (256)
@@ -47,6 +48,21 @@ void Error_Quit (char const * msg)
     fprintf (stderr, "WEBSERV: %s\n", msg);
     exit (EXIT_FAILURE);
 }
+
+  
+String XHCP_getUuid()
+{
+  uuid_t uuid_id;
+  char buffer[UUID_PRINTABLE_STRING_LENGTH+1];
+
+  uuid_generate(uuid_id);
+  uuid_unparse(uuid_id, buffer);
+  
+  /* Pass a copy off */
+  return xPL_StrDup(buffer);
+}
+
+
 
 
 /*  Read a line from a socket  */
@@ -581,3 +597,28 @@ int XHCPcmd_PUTCONFIGXML (int sockd, int argc, char **argv)
     return 1;
 }
 
+int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
+{
+    node_t **rulesNodesLst;
+    char buffer[XHCP_BUFFER_SZ];
+    int sz_buffer;
+    int i, nb;
+    
+    XHCP_printXHCPResponse (sockd, RES_LSTDTRFOL ); // List of Determinator Rules follows
+    
+    if ( (rulesNodesLst = roxml_xpath (rootConfig, "//determinator", &nb )) !=NULL )
+    {
+        for (i=0; i<nb; i++)
+        {
+            char *champ1 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "guid", 0), buffer, XHCP_BUFFER_SZ, &sz_buffer );
+            char *champ2 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "name", 0), champ1 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
+            char *champ3 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "enabled", 0), champ2 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
+            
+            XHCP_print(sockd, "%s\t%s\t%s",champ1,champ2,champ3);
+//String identi = xPL_getFairlyUniqueIdent();
+        }
+    }
+    
+    XHCP_print(sockd, ".");
+    return 1;
+}

@@ -159,6 +159,7 @@ EXT_XHCP_SERVER int XHCPcmd_CAPABILITIES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_PUTCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_LISTRULES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETRULE ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_SETRULE ( int, int, char **);
 
 
 /* Variables globales ************************************************************/
@@ -218,7 +219,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_SENDXAPMSG      , "SENDXAPMSG"       , NULL },   
 				{ CMD_SENDXPLMSG      , "SENDXPLMSG"       , NULL },   
 				{ CMD_SETGLOBAL       , "SETGLOBAL"        , NULL },  
-				{ CMD_SETRULE         , "SETRULE"          , NULL },
+				{ CMD_SETRULE         , "SETRULE"          , XHCPcmd_SETRULE },
 				{ CMD_SETSETTING      , "SETSETTING"       , NULL },   
 				{ CMD_QUIT            , "QUIT"             , XHCPcmd_QUIT },   
 				{ END_CMD             , NULL               , NULL }  };

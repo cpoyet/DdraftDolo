@@ -314,11 +314,39 @@ char *addBuffer ( char *buffer, char*str)
     return buffer;
 }
 
+int cut_Line (char *buffer, int *argc, char **argv)
+{
+    char *line=NULL;
+    int count = 0;
+    char *token, *svgptr;
+    
+
+ 
+	if ( (line = strdup (buffer)) == NULL )
+        return -1;
+    
+    token = strtok_r (line, " ", &svgptr);
+    if (token != NULL)
+    {
+        argv[count++]=token;
+        while ( count<=MAX_CMD_ARGS && (token = strtok_r (NULL, " ", &svgptr)) != NULL  )
+        {
+            argv[count++]=token;
+        }
+        
+        toUpper (argv[0]);
+    }
+    
+    free (line);
+    
+	*argc=count;
+    return count;
+}
+
 int getXHCPRequest (int conn)
 {
     
-    char   buffer[MAX_REQ_LINE] =
-    {0};
+    char   buffer[MAX_REQ_LINE] = {0};
     int    rval;
     fd_set fds;
     struct timeval tv;
@@ -373,6 +401,17 @@ int getXHCPRequest (int conn)
                 else
                 {
                     printf ("Ligne lue : %s\n", buffer);
+					int argc;
+					char *argv[MAX_CMD_ARGS+1];
+					int i;
+					
+        
+					cut_Line (buffer, &argc, argv);
+
+					printf ("%d arguments :\n", argc);
+					for ( i=0; i<argc; i++ )
+						printf ( "%d - %s\n", i, argv[i]);
+
                     status = Parse_Line (conn, buffer); // We compute the line...
                 }
             }
@@ -715,4 +754,32 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     return 1;
 }
 
+int XHCPcmd_SETRULE_handle (int sockd, char *cfgData)
+{
+    node_t *tmp;
+    printf ("Entree XHCPcmd_SETRULE_handle\n");
+    if ( (tmp = roxml_load_buf (cfgData)) == NULL )
+    {
+        XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
+        return -1;
+    }
+    
+    printf ("Chargement XML OK\n");
+	
+	
+	
+
+    XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
+    
+    return 0;
+}
+
+int XHCPcmd_SETRULE (int sockd, int argc, char **argv)
+{
+    XHCP_printXHCPResponse (sockd, RES_SENDDRULE ); // Send rule, end with <CrLf>.<CrLf>
+    
+    XHCP_setAdditionalDataHandler (XHCPcmd_SETRULE_handle);
+    
+    return 1;
+}
 

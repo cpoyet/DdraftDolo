@@ -37,7 +37,7 @@
 
 #define XHCP_BUFFER_SZ            (256)
 
-//Because UUID_PRINTABLE_STRING_LENGTH is not defined on Linux libuuid
+//Because UUID_PRINTABLE_STRING_LENGTH is not defined in Linux uuid lib
 #ifndef UUID_PRINTABLE_STRING_LENGTH
 #define UUID_PRINTABLE_STRING_LENGTH 37
 #endif
@@ -152,16 +152,34 @@ ssize_t Writeline (int sockd, const void *vptr, size_t n)
 void XHCP_print (int sockd, char *Libelle, ... )
 {
     va_list Marker;
-    char msg[256];
+    //char msg[256];
+	
+	int sz_alloc=strlen(Libelle) + 256;
+	int sz_msg;
+	
+	char *msg = (char *)malloc(sz_alloc);
+	msg[0]='\0';
     
     /* construction du libelle du message */
     va_start ( Marker, Libelle);
+	
+	sz_msg=strlen(msg);
+	if ( sz_alloc-sz_msg<128 )
+	{
+		sz_alloc += 128;
+		msg = (char *)realloc(msg,sz_alloc);
+	}	
     vsprintf (msg, Libelle, Marker);
+	
     va_end ( Marker);
     
-    strcat (msg, "\r\n");
-    
     Writeline (sockd, msg, strlen (msg));
+	
+	sz_msg=strlen(msg);
+	if ( msg[sz_msg-1] != '\n' )
+		Writeline (sockd, "\r\n", 2);
+    
+	free(msg);
 }
 
 
@@ -681,16 +699,12 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
 		XHCP_printXHCPResponse (sockd, RES_NOSUCHSCR ); // No such script/rule
 	else
     {
-		printf("%d rules trouvé\n",nb);
 		XHCP_printXHCPResponse (sockd, RES_REQSCRFOL ); // Requested script/rule follows
 	
 		//sz_buffer = roxml_commit_changes(rulesNodesLst[0], NULL, &writeBuffer, 1);
 		sz_buffer = xhcp_roxml_commit_changes(rulesNodesLst[0],&writeBuffer);
-		printf("sz=%d len=%d\n",sz_buffer,strlen(writeBuffer));
-		
-		printf("%s\n",writeBuffer);
+
 		XHCP_print(sockd, writeBuffer);
-		
 		XHCP_print(sockd, ".");
 		
 		free(writeBuffer);

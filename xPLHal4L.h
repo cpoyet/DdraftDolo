@@ -28,6 +28,10 @@
 #define XPLHAL4L_VERSION "0.0.1"
 #define XPLHAL4L_VENDOR "xPLHal4L"
 
+#ifndef IGNORE_EMPTY_TEXT_NODES
+#define IGNORE_EMPTY_TEXT_NODES
+#endif
+
 
 /* Macros ********************************************************/
 

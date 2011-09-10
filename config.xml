@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <XHCPserver>
-<ConnectionTimeOut delay="15" />
+<ConnectionTimeOut delay="30" />
 </XHCPserver>
  <determinators>
   <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="vdfvgd" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
@@ -11,14 +11,7 @@
       <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action" />
     </output>
 </determinator>
-<determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="determinator2" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="N">
-    <input match="all">
-      <timeCondition display_name="premiere condition test" operator="&gt;" value="21:39" />
-    </input>
-    <output>
-      <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action" />
-    </output>
-  </determinator>
+<determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="determinator2" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="N"><input match="all"><timeCondition display_name="premiere condition test" operator="&gt;" value="21:39" /></input><output><globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action" /></output></determinator>
  <determinator guid="test">
  </determinator>
 </determinators>

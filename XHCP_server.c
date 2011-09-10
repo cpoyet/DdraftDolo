@@ -316,16 +316,10 @@ char *addBuffer ( char *buffer, char*str)
 
 int cut_Line (char *buffer, int *argc, char **argv)
 {
-    char *line=NULL;
     int count = 0;
     char *token, *svgptr;
     
-
- 
-	if ( (line = strdup (buffer)) == NULL )
-        return -1;
-    
-    token = strtok_r (line, " ", &svgptr);
+    token = strtok_r (buffer, " ", &svgptr);
     if (token != NULL)
     {
         argv[count++]=token;
@@ -336,11 +330,42 @@ int cut_Line (char *buffer, int *argc, char **argv)
         
         toUpper (argv[0]);
     }
-    
-    free (line);
-    
 	*argc=count;
     return count;
+}
+
+int exec_Line (int conn,int argc, char **argv)
+{
+    
+    XHCP_command *cmd;
+    
+    int retValue=0;
+    
+        
+        toUpper (argv[0]);
+        
+        for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
+            if ( strcmp (argv[0], cmd->str) == 0 ) break;
+        
+        if ( cmd->id == END_CMD )
+        {
+            XHCP_printXHCPResponse (conn, RES_COMNOTREC );  // 500 Command not recognised
+            retValue = 1;
+        }
+        else
+        {
+            if ( cmd->fnct == NULL )
+            {
+                //			XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
+                XHCP_printMessage (conn, 500, "Command not implemented" );
+                retValue = 1;
+            }
+            else
+                retValue = cmd->fnct (conn, argc, argv);
+        }
+        
+   
+    return retValue;
 }
 
 int getXHCPRequest (int conn)
@@ -407,12 +432,15 @@ int getXHCPRequest (int conn)
 					
         
 					cut_Line (buffer, &argc, argv);
+					
 
 					printf ("%d arguments :\n", argc);
 					for ( i=0; i<argc; i++ )
 						printf ( "%d - %s\n", i, argv[i]);
 
-                    status = Parse_Line (conn, buffer); // We compute the line...
+					status = exec_Line (conn, argc, argv ); // We compute the line...
+						
+                   // status = Parse_Line (conn, buffer); // We compute the line...
                 }
             }
             else
@@ -740,8 +768,8 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     {
 		XHCP_printXHCPResponse (sockd, RES_REQSCRFOL ); // Requested script/rule follows
 	
-		//sz_buffer = roxml_commit_changes(rulesNodesLst[0], NULL, &writeBuffer, 1);
-		sz_buffer = xhcp_roxml_commit_changes(rulesNodesLst[0],&writeBuffer);
+		sz_buffer = roxml_commit_changes(rulesNodesLst[0], NULL, &writeBuffer, 1);
+		//sz_buffer = xhcp_roxml_commit_changes(rulesNodesLst[0],&writeBuffer);
 
 		XHCP_print(sockd, writeBuffer);
 		XHCP_print(sockd, ".");

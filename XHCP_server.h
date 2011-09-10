@@ -11,6 +11,9 @@
 #define EXT_XHCP_SERVER 
 #endif
 
+#ifndef IGNORE_EMPTY_TEXT_NODES
+#define IGNORE_EMPTY_TEXT_NODES
+#endif
 
 #include <stdio.h>
 

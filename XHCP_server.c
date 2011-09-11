@@ -45,7 +45,7 @@
 
 node_t *domConfig;
 
-int ( *additionalDataHandler) ( int, char * ) = NULL;
+int ( *additionalDataHandler) ( int hdl, int argc, char **argv, char *data ) = NULL;
 
 
 
@@ -376,8 +376,10 @@ int getXHCPRequest (int conn)
     fd_set fds;
     struct timeval tv;
     int status = 0;
-    int lastLineIsEmpty = 0;
+//    int lastLineIsEmpty = 0;
     char *additionalDataBuffer=NULL;
+	int argc = 0;
+	char *argv[MAX_CMD_ARGS+1];
     
     
     /*  Set timeout  */
@@ -426,15 +428,11 @@ int getXHCPRequest (int conn)
                 else
                 {
                     printf ("Ligne lue : %s\n", buffer);
-					int argc;
-					char *argv[MAX_CMD_ARGS+1];
-					int i;
-					
         
 					cut_Line (buffer, &argc, argv);
-					
 
 					printf ("%d arguments :\n", argc);
+					int i;
 					for ( i=0; i<argc; i++ )
 						printf ( "%d - %s\n", i, argv[i]);
 
@@ -451,22 +449,22 @@ int getXHCPRequest (int conn)
                 /* The handler is activate, so all lignes are added in buffer */
                 if ( buffer[0] == '.' &&  buffer[1] == '\0')
                 {
-                    additionalDataHandler (conn, additionalDataBuffer );
-                    lastLineIsEmpty=0;
+                    additionalDataHandler (conn, argc, argv, additionalDataBuffer );
+//                    lastLineIsEmpty=0;
                     additionalDataHandler = NULL;
                     free (additionalDataBuffer);
                     additionalDataBuffer = NULL;
                 }
-                else if ( buffer[0] == '\0' )
-                {
-                    /* Haha... a empty line ? We note it in case when the nest line contain a '.' */
-                    lastLineIsEmpty=1;
-                    additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
-                }
+                // else if ( buffer[0] == '\0' )
+                // {
+                    // /* Haha... a empty line ? We note it in case when the nest line contain a '.' */
+                    // lastLineIsEmpty=1;
+                    // additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
+                // }
                 else
                 {
                     /* Adding the line to the data buffer */
-                    lastLineIsEmpty=0;
+//                    lastLineIsEmpty=0;
                     additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
                 }
                 
@@ -655,11 +653,11 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
     return 1;
 }
 
-int XHCPcmd_PUTCONFIGXML_handle (int sockd, char *cfgData)
+int XHCPcmd_PUTCONFIGXML_handle (int sockd, int argc, char **argv, char *data)
 {
     node_t *tmp;
     printf ("Entree XHCPcmd_PUTCONFIGXML_handle\n");
-    if ( (tmp = roxml_load_buf (cfgData)) == NULL )
+    if ( (tmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
         return -1;
@@ -714,34 +712,6 @@ int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
 }
 
 
-int xhcp_roxml_commit_changes(node_t *n, char ** buffer)
-{
-	int size = 0;
-	int len = 0;
-	FILE *fout = NULL;
-int XHCP_ROXML_LONG_LEN = 512;
-	
-	
-	if(n) {
-		len = XHCP_ROXML_LONG_LEN;
-			*buffer = (char*)malloc(XHCP_ROXML_LONG_LEN);
-			memset(*buffer, 0, XHCP_ROXML_LONG_LEN);
-
-		roxml_write_node(n, fout, buffer, 1, 0, &size, &len);
-
-			char * ptr = NULL;
-			len -= XHCP_ROXML_LONG_LEN;
-			ptr = *buffer + len;
-			len += strlen(ptr);
-
-
-	}
-
-	return len;
-}
-
-
-
 int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
 {
     node_t **rulesNodesLst;
@@ -769,7 +739,6 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
 		XHCP_printXHCPResponse (sockd, RES_REQSCRFOL ); // Requested script/rule follows
 	
 		sz_buffer = roxml_commit_changes(rulesNodesLst[0], NULL, &writeBuffer, 1);
-		//sz_buffer = xhcp_roxml_commit_changes(rulesNodesLst[0],&writeBuffer);
 
 		XHCP_print(sockd, writeBuffer);
 		XHCP_print(sockd, ".");
@@ -782,11 +751,12 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     return 1;
 }
 
-int XHCPcmd_SETRULE_handle (int sockd, char *cfgData)
+int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
 {
     node_t *tmp;
+	char *newId;
     printf ("Entree XHCPcmd_SETRULE_handle\n");
-    if ( (tmp = roxml_load_buf (cfgData)) == NULL )
+    if ( (tmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
         return -1;
@@ -794,7 +764,16 @@ int XHCPcmd_SETRULE_handle (int sockd, char *cfgData)
     
     printf ("Chargement XML OK\n");
 	
+	// On recherche si un id est présent
 	
+	if ( argc == 1 ) // pas d'arguments, nouveau determinator
+	{
+		// On vérifie
+		newId=XHCP_getUuid();
+	}
+	else
+	{
+	}
 	
 
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded

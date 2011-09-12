@@ -73,7 +73,8 @@ EXT_XHCP_SERVER enum _XHCP_command_id {	CMD_ADDEVENT        ,
 				CMD_SETRULE         , 
 				CMD_SETSETTING      , 
 				CMD_QUIT            ,
-				END_CMD					 };
+				CMD_SHUTDOWN        ,
+				END_CMD	};
 typedef enum _XHCP_command_id XHCP_command_id;
 EXT_XHCP_SERVER enum _XHCP_response_id {	RES_HALWELCOM,
 				RES_RELOADSUC,
@@ -163,6 +164,7 @@ EXT_XHCP_SERVER int XHCPcmd_PUTCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_LISTRULES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETRULE ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SETRULE ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_SHUTDOWN ( int, int, char **);
 
 
 /* Variables globales ************************************************************/
@@ -225,6 +227,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_SETRULE         , "SETRULE"          , XHCPcmd_SETRULE },
 				{ CMD_SETSETTING      , "SETSETTING"       , NULL },   
 				{ CMD_QUIT            , "QUIT"             , XHCPcmd_QUIT },   
+				{ CMD_SHUTDOWN        , "SHUTDOWN"         , XHCPcmd_SHUTDOWN },   
 				{ END_CMD             , NULL               , NULL }  };
 				
 EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {

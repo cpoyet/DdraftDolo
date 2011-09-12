@@ -44,6 +44,8 @@
 
 
 node_t *domConfig;
+int stop = 0;
+
 
 int ( *additionalDataHandler) ( int hdl, int argc, char **argv, char *data ) = NULL;
 
@@ -55,17 +57,17 @@ void Error_Quit (char const * msg)
     exit (EXIT_FAILURE);
 }
 
-  
-String XHCP_getUuid()
-{
-  uuid_t uuid_id;
-  char buffer[UUID_PRINTABLE_STRING_LENGTH+1];
 
-  uuid_generate(uuid_id);
-  uuid_unparse(uuid_id, buffer);
-  
-  /* Pass a copy off */
-  return xPL_StrDup(buffer);
+String XHCP_getUuid ()
+{
+    uuid_t uuid_id;
+    char buffer[UUID_PRINTABLE_STRING_LENGTH+1];
+    
+    uuid_generate (uuid_id);
+    uuid_unparse (uuid_id, buffer);
+    
+    /* Pass a copy off */
+    return xPL_StrDup (buffer);
 }
 
 
@@ -153,33 +155,33 @@ void XHCP_print (int sockd, char *Libelle, ... )
 {
     va_list Marker;
     //char msg[256];
-	
-	int sz_alloc=strlen(Libelle) + 256;
-	int sz_msg;
-	
-	char *msg = (char *)malloc(sz_alloc);
-	msg[0]='\0';
+    
+    int sz_alloc=strlen (Libelle) + 256;
+    int sz_msg;
+    
+    char *msg = (char *)malloc (sz_alloc);
+    msg[0]='\0';
     
     /* construction du libelle du message */
     va_start ( Marker, Libelle);
-	
-	sz_msg=strlen(msg);
-	if ( sz_alloc-sz_msg<128 )
-	{
-		sz_alloc += 128;
-		msg = (char *)realloc(msg,sz_alloc);
-	}	
+    
+    sz_msg=strlen (msg);
+    if ( sz_alloc-sz_msg<128 )
+    {
+        sz_alloc += 128;
+        msg = (char *)realloc (msg, sz_alloc);
+    }
     vsprintf (msg, Libelle, Marker);
-	
+    
     va_end ( Marker);
     
     Writeline (sockd, msg, strlen (msg));
-	
-	sz_msg=strlen(msg);
-	if ( msg[sz_msg-1] != '\n' )
-		Writeline (sockd, "\r\n", 2);
     
-	free(msg);
+    sz_msg=strlen (msg);
+    if ( msg[sz_msg-1] != '\n' )
+        Writeline (sockd, "\r\n", 2);
+    
+    free (msg);
 }
 
 
@@ -227,66 +229,66 @@ char * toUpper (char *str)
     
     return str;
 }
+/*
+ int Parse_Line (int conn, char *buffer)
+ {
+ char *line=NULL;
+ char *argv[MAX_CMD_ARGS+1];
+ int  argc=0;
 
-int Parse_Line (int conn, char *buffer)
-{
-    char *line=NULL;
-    char *argv[MAX_CMD_ARGS+1];
-    int  argc=0;
-    
-    char *token, *svgptr;
-    int i;
-    
-    XHCP_command *cmd;
-    
-    int retValue=0;
-    
-    if ( (line = strdup (buffer)) == NULL )
-        return -1;
-    
-    token = strtok_r (line, " ", &svgptr);
-    if (token != NULL)
-    {
-        argv[argc++]=token;
-        while ( argc<=MAX_CMD_ARGS && (token = strtok_r (NULL, " ", &svgptr)) != NULL  )
-        {
-            argv[argc++]=token;
-        }
-        
-        toUpper (argv[0]);
-        
-        for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
-            if ( strcmp (argv[0], cmd->str) == 0 ) break;
-        
-        if ( cmd->id == END_CMD )
-        {
-            XHCP_printXHCPResponse (conn, RES_COMNOTREC );  // 500 Command not recognised
-            retValue = 1;
-        }
-        else
-        {
-            if ( cmd->fnct == NULL )
-            {
-                //			XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
-                XHCP_printMessage (conn, 500, "Command not implemented" );
-                retValue = 1;
-            }
-            else
-                retValue = cmd->fnct (conn, argc, argv);
-        }
-        
-        
-        printf ("%d arguments :\n", argc);
-        for ( i=0; i<argc; i++ )
-            printf ( "%d - %s\n", i, argv[i]);
-        
-        
-    }
-    
-    free (line);
-    
-    return retValue;
-}
+ char *token, *svgptr;
+ int i;
+
+ XHCP_command *cmd;
+
+ int retValue=0;
+
+ if ( (line = strdup (buffer)) == NULL )
+ return -1;
+
+ token = strtok_r (line, " ", &svgptr);
+ if (token != NULL)
+ {
+ argv[argc++]=token;
+ while ( argc<=MAX_CMD_ARGS && (token = strtok_r (NULL, " ", &svgptr)) != NULL  )
+ {
+ argv[argc++]=token;
+ }
+
+ toUpper (argv[0]);
+
+ for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
+ if ( strcmp (argv[0], cmd->str) == 0 ) break;
+
+ if ( cmd->id == END_CMD )
+ {
+ XHCP_printXHCPResponse (conn, RES_COMNOTREC );
+ retValue = 1;
+ }
+ else
+ {
+ if ( cmd->fnct == NULL )
+ {
+ XHCP_printMessage (conn, 500, "Command not implemented" );
+ retValue = 1;
+ }
+ else
+ retValue = cmd->fnct (conn, argc, argv);
+ }
+
+
+ printf ("%d arguments :\n", argc);
+ for ( i=0; i<argc; i++ )
+ printf ( "%d - %s\n", i, argv[i]);
+
+
+ }
+
+ free (line);
+
+ return retValue;
+ }
+ */
 
 char *addBuffer ( char *buffer, char*str)
 {
@@ -330,56 +332,57 @@ int cut_Line (char *buffer, int *argc, char **argv)
         
         toUpper (argv[0]);
     }
-	*argc=count;
+    *argc=count;
     return count;
 }
 
-int exec_Line (int conn,int argc, char **argv)
+int exec_Line (int conn, int argc, char **argv)
 {
     
     XHCP_command *cmd;
     
     int retValue=0;
     
-        
-        toUpper (argv[0]);
-        
-        for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
-            if ( strcmp (argv[0], cmd->str) == 0 ) break;
-        
-        if ( cmd->id == END_CMD )
+    
+    toUpper (argv[0]);
+    
+    for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
+        if ( strcmp (argv[0], cmd->str) == 0 ) break;
+    
+    if ( cmd->id == END_CMD )
+    {
+        XHCP_printXHCPResponse (conn, RES_COMNOTREC );  // 500 Command not recognised
+        retValue = 1;
+    }
+    else
+    {
+        if ( cmd->fnct == NULL )
         {
-            XHCP_printXHCPResponse (conn, RES_COMNOTREC );  // 500 Command not recognised
+            /*XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!*/
+            XHCP_printMessage (conn, 500, "Command not implemented" );
             retValue = 1;
         }
         else
-        {
-            if ( cmd->fnct == NULL )
-            {
-                //			XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!
-                XHCP_printMessage (conn, 500, "Command not implemented" );
-                retValue = 1;
-            }
-            else
-                retValue = cmd->fnct (conn, argc, argv);
-        }
-        
-   
+            retValue = cmd->fnct (conn, argc, argv);
+    }
+    
+    
     return retValue;
 }
 
 int getXHCPRequest (int conn)
 {
     
-    char   buffer[MAX_REQ_LINE] = {0};
+    char   buffer[MAX_REQ_LINE] =
+    {0};
     int    rval;
     fd_set fds;
     struct timeval tv;
     int status = 0;
-//    int lastLineIsEmpty = 0;
+    //    int lastLineIsEmpty = 0;
     char *additionalDataBuffer=NULL;
-	int argc = 0;
-	char *argv[MAX_CMD_ARGS+1];
+    int argc = 0;
+    char *argv[MAX_CMD_ARGS+1];
     
     
     /*  Set timeout  */
@@ -428,43 +431,41 @@ int getXHCPRequest (int conn)
                 else
                 {
                     printf ("Ligne lue : %s\n", buffer);
-        
-					cut_Line (buffer, &argc, argv);
-
-					printf ("%d arguments :\n", argc);
-					int i;
-					for ( i=0; i<argc; i++ )
-						printf ( "%d - %s\n", i, argv[i]);
-
-					status = exec_Line (conn, argc, argv ); // We compute the line...
-						
-                   // status = Parse_Line (conn, buffer); // We compute the line...
+                    
+                    cut_Line (buffer, &argc, argv);
+                    
+                    printf ("%d arguments :\n", argc);
+                    int i;
+                    for ( i=0; i<argc; i++ )
+                        printf ( "%d - %s\n", i, argv[i]);
+                    
+                    status = exec_Line (conn, argc, argv ); // We compute the line...
                 }
             }
             else
             {
                 /* We suppress all extra characters on the right except '.' and '>' */
-                Trim (buffer, 1); 
+                Trim (buffer, 1);
                 
                 /* The handler is activate, so all lignes are added in buffer */
                 if ( buffer[0] == '.' &&  buffer[1] == '\0')
                 {
                     additionalDataHandler (conn, argc, argv, additionalDataBuffer );
-//                    lastLineIsEmpty=0;
+                    //                    lastLineIsEmpty=0;
                     additionalDataHandler = NULL;
                     free (additionalDataBuffer);
                     additionalDataBuffer = NULL;
                 }
                 // else if ( buffer[0] == '\0' )
                 // {
-                    // /* Haha... a empty line ? We note it in case when the nest line contain a '.' */
-                    // lastLineIsEmpty=1;
-                    // additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
+                // /* Haha... a empty line ? We note it in case when the nest line contain a '.' */
+                // lastLineIsEmpty=1;
+                // additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
                 // }
                 else
                 {
                     /* Adding the line to the data buffer */
-//                    lastLineIsEmpty=0;
+                    //                    lastLineIsEmpty=0;
                     additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
                 }
                 
@@ -592,7 +593,7 @@ int XHCP_server (node_t* argXmlConfig)
     
     /*  Loop infinitely to accept and service connections  */
     
-    while ( 1 )
+    while ( ! stop )
     {
         
         /*  Wait for connection  */
@@ -623,6 +624,15 @@ int XHCP_server (node_t* argXmlConfig)
 
 int XHCPcmd_QUIT (int sockd, int argc, char **argv)
 {
+    return 0;
+}
+
+int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
+{
+    stop = 1;
+    
+    XHCP_printMessage (sockd, 221, "Shuting down in progress ... Good night... !!" );
+    
     return 0;
 }
 
@@ -702,12 +712,12 @@ int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
             char *champ1 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "guid", 0), buffer, XHCP_BUFFER_SZ, &sz_buffer );
             char *champ2 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "name", 0), champ1 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
             char *champ3 = roxml_get_content ( roxml_get_attr (rulesNodesLst[i], "enabled", 0), champ2 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
- 
-			XHCP_print(sockd, "%s\t%s\t%s",champ1,champ2,champ3);
+            
+            XHCP_print (sockd, "%s\t%s\t%s", champ1, champ2, champ3);
         }
     }
     
-    XHCP_print(sockd, ".");
+    XHCP_print (sockd, ".");
     return 1;
 }
 
@@ -718,64 +728,68 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     char buffer[XHCP_BUFFER_SZ];
     int sz_buffer;
     int nb;
-	
-	char *writeBuffer = NULL;
+    
+    char *writeBuffer = NULL;
     
     
-	if (argc != 2)
-	{
-		XHCP_printXHCPResponse (sockd, RES_SYNTAXERR ); // Syntax Error
-		return 1;
-	}
-	
-    sprintf(buffer,"//determinator[@guid='%s']",argv[1]);
-	
-	printf("%s\n",buffer);
-	
-    if ( (rulesNodesLst = roxml_xpath (rootConfig, buffer, &nb )) == NULL )
-		XHCP_printXHCPResponse (sockd, RES_NOSUCHSCR ); // No such script/rule
-	else
+    if (argc != 2)
     {
-		XHCP_printXHCPResponse (sockd, RES_REQSCRFOL ); // Requested script/rule follows
-	
-		sz_buffer = roxml_commit_changes(rulesNodesLst[0], NULL, &writeBuffer, 1);
-
-		XHCP_print(sockd, writeBuffer);
-		XHCP_print(sockd, ".");
-		
-		free(writeBuffer);
+        XHCP_printXHCPResponse (sockd, RES_SYNTAXERR ); // Syntax Error
+        return 1;
     }
-
-	
+    
+    sprintf (buffer, "//determinator[@guid='%s']", argv[1]);
+    
+    printf ("%s\n", buffer);
+    
+    if ( (rulesNodesLst = roxml_xpath (rootConfig, buffer, &nb )) == NULL )
+        XHCP_printXHCPResponse (sockd, RES_NOSUCHSCR ); // No such script/rule
+    else
+    {
+        XHCP_printXHCPResponse (sockd, RES_REQSCRFOL ); // Requested script/rule follows
+        
+        sz_buffer = roxml_commit_changes (rulesNodesLst[0], NULL, &writeBuffer, 1);
+        
+        XHCP_print (sockd, writeBuffer);
+        XHCP_print (sockd, ".");
+        
+        free (writeBuffer);
+    }
+    
+    
     
     return 1;
 }
 
 int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
 {
-    node_t *tmp;
-	char *newId;
-    printf ("Entree XHCPcmd_SETRULE_handle\n");
-    if ( (tmp = roxml_load_buf (data)) == NULL )
+    node_t *nTmp;
+    node_t **lstNodes;
+    char *newId;
+    int nb;
+    
+    printf ("Entree XHCPcmd_SETRULE_handle avec %d arguments\n", argc);
+    if ( (nTmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
         return -1;
     }
     
     printf ("Chargement XML OK\n");
-	
-	// On recherche si un id est présent
-	
-	if ( argc == 1 ) // pas d'arguments, nouveau determinator
-	{
-		// On vérifie
-		newId=XHCP_getUuid();
-	}
-	else
-	{
-	}
-	
-
+    
+    // On recherche si un id est prÃ©sent
+    if ( (lstNodes = roxml_xpath (nTmp, "//guid", &nb )) == NULL )
+        
+        if ( argc == 1 ) // pas d'arguments, nouveau determinator
+        {
+            // On vÃ©rifie
+            newId=XHCP_getUuid ();
+        }
+        else
+        {
+        }
+    
+    
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
     
     return 0;

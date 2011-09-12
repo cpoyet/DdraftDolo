@@ -32,7 +32,7 @@
 
 #define XHCP_version "1.5"
 
-#define LISTENQ              		(1024)
+#define LISTENQ                  	(1024)
 #define XHCP_SERVER_PORT            (3865)
 
 #define XHCP_BUFFER_SZ            (256)
@@ -486,7 +486,7 @@ void XHCP_customWelcomeMessage ()
     XHCP_response *resp;
     char buffer[256];
     
-    sprintf (buffer, "%s.%s (on %s/%s) Version %s XHCP %s ready", XPLHAL4L_VENDOR, XHCP_hostName, XHCP_sysName, XHCP_sysArchi, XPLHAL4L_VERSION, XHCP_version);
+    sprintf (buffer, "%s.%s (%s/%s) Version %s XHCP %s ready", XPLHAL4L_VENDOR, XHCP_hostName, XHCP_sysName, XHCP_sysArchi, XPLHAL4L_VERSION, XHCP_version);
     
     for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != RES_HALWELCOM; resp++);
     
@@ -577,11 +577,20 @@ int XHCP_server (node_t* argXmlConfig)
     servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
     servaddr.sin_port        = htons (XHCP_SERVER_PORT);
     
-    
+
+
+    /* "Address already in use" error message killer !!!! */
+    int tr=1;
+    if (setsockopt(listener,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
+        perror("setsockopt");
+        exit(1);
+    }    
     /*  Assign socket address to socket  */
     if ( bind (listener, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
+    {
+        perror("Bind");
         Error_Quit ("Couldn't bind listening socket.");
-    
+    }
     
     /*  Make socket a listening socket  */
     if ( listen (listener, LISTENQ) < 0 )
@@ -619,7 +628,7 @@ int XHCP_server (node_t* argXmlConfig)
         
     }
     
-    return EXIT_FAILURE;    /*  We shouldn't get here  */
+    return 0;
 }
 
 int XHCPcmd_QUIT (int sockd, int argc, char **argv)

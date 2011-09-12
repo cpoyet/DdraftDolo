@@ -3,6 +3,8 @@
 
 #include "xPLHal4L.h"
 
+int stop = 0;
+
 int getOptions ( int argc, char **argv)
 {
     int c;

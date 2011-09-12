@@ -42,4 +42,7 @@
 EXT_XPLHAL4L char *HAL4L_configFile;
 EXT_XPLHAL4L node_t *rootConfig;
 
+EXT_XPLHAL4L int stop;
+
+
 #endif

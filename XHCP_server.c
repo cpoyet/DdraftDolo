@@ -44,7 +44,7 @@
 
 
 node_t *domConfig;
-int stop = 0;
+
 
 
 int ( *additionalDataHandler) ( int hdl, int argc, char **argv, char *data ) = NULL;
@@ -67,7 +67,8 @@ String XHCP_getUuid ()
     uuid_unparse (uuid_id, buffer);
     
     /* Pass a copy off */
-    return xPL_StrDup (buffer);
+    //return xPL_StrDup (buffer);
+    return strdup (buffer);
 }
 
 
@@ -320,8 +321,13 @@ int cut_Line (char *buffer, int *argc, char **argv)
 {
     int count = 0;
     char *token, *svgptr;
+	static char* lBuff=NULL;
     
-    token = strtok_r (buffer, " ", &svgptr);
+	if ( lBuff != NULL )
+		free (lBuff);
+	lBuff= strdup(buffer);
+	
+    token = strtok_r (lBuff, " ", &svgptr);
     if (token != NULL)
     {
         argv[count++]=token;
@@ -373,13 +379,11 @@ int exec_Line (int conn, int argc, char **argv)
 int getXHCPRequest (int conn)
 {
     
-    char   buffer[MAX_REQ_LINE] =
-    {0};
+    char   buffer[MAX_REQ_LINE] = {0};
     int    rval;
     fd_set fds;
     struct timeval tv;
     int status = 0;
-    //    int lastLineIsEmpty = 0;
     char *additionalDataBuffer=NULL;
     int argc = 0;
     char *argv[MAX_CMD_ARGS+1];
@@ -451,21 +455,12 @@ int getXHCPRequest (int conn)
                 if ( buffer[0] == '.' &&  buffer[1] == '\0')
                 {
                     additionalDataHandler (conn, argc, argv, additionalDataBuffer );
-                    //                    lastLineIsEmpty=0;
                     additionalDataHandler = NULL;
                     free (additionalDataBuffer);
                     additionalDataBuffer = NULL;
                 }
-                // else if ( buffer[0] == '\0' )
-                // {
-                // /* Haha... a empty line ? We note it in case when the nest line contain a '.' */
-                // lastLineIsEmpty=1;
-                // additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
-                // }
                 else
                 {
-                    /* Adding the line to the data buffer */
-                    //                    lastLineIsEmpty=0;
                     additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
                 }
                 
@@ -774,10 +769,16 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
 {
     node_t *nTmp;
     node_t **lstNodes;
-    char *newId;
+    char *newId = NULL;
     int nb;
     
     printf ("Entree XHCPcmd_SETRULE_handle avec %d arguments\n", argc);
+                   int i;
+                    for ( i=0; i<argc; i++ )
+                        printf ( "%d - %s\n", i, argv[i]);
+ 
+
+
     if ( (nTmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
@@ -786,19 +787,47 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
     
     printf ("Chargement XML OK\n");
     
-    // On recherche si un id est présent
-    if ( (lstNodes = roxml_xpath (nTmp, "//guid", &nb )) == NULL )
-        
-        if ( argc == 1 ) // pas d'arguments, nouveau determinator
-        {
-            // On vérifie
-            newId=XHCP_getUuid ();
-        }
-        else
-        {
-        }
-    
-    
+	if ( argc == 2 ) // pas de node mais id donné en argument
+		newId = strdup(argv[1]);
+printf("apres argc id = %s\n",newId==NULL ? "NULL":newId);
+		// On recherche si un id est présent
+    if ( (lstNodes = roxml_xpath (nTmp, "//determinator[@guid]", &nb )) != NULL )
+	{
+printf("guid présent dans le XML\n");
+		node_t *attr_tmp = roxml_get_attr (lstNodes[0], "guid", 0);
+
+		if ( newId == NULL && argc == 1 )
+		{
+			newId = roxml_get_content(attr_tmp, NULL, 0, NULL);
+		}
+
+		roxml_del_node(attr_tmp);
+    char *zaza = NULL;
+  roxml_commit_changes (lstNodes[0], NULL, &zaza, 1);
+printf("%s\n",  zaza);
+	}
+printf("apres xpath id = %s\n",newId==NULL ? "NULL":newId);
+	if ( newId == NULL )
+		newId = XHCP_getUuid();
+
+printf("a la fin id = %s\n",newId==NULL ? "NULL":newId);
+		
+	lstNodes = roxml_xpath (nTmp, "//determinator", &nb );
+	if ( nb != 1 )
+    {
+printf("Pas trouve //derterminator, nb=%d\n",nb);
+        XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
+        return -1;
+    }
+	// Ajout d'un nouveau noeud
+	roxml_add_node(lstNodes[0], 0, ROXML_ATTR_NODE, "guid", newId);		
+printf("attribut ajouté\n");
+    char *writeBuffer = NULL;
+  roxml_commit_changes (lstNodes[0], NULL, &writeBuffer, 1);
+printf("%s\n",  writeBuffer);
+
+
+    free(newId);
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
     
     return 0;

@@ -802,9 +802,6 @@ printf("guid présent dans le XML\n");
 		}
 
 		roxml_del_node(attr_tmp);
-    char *zaza = NULL;
-  roxml_commit_changes (lstNodes[0], NULL, &zaza, 1);
-printf("%s\n",  zaza);
 	}
 printf("apres xpath id = %s\n",newId==NULL ? "NULL":newId);
 	if ( newId == NULL )
@@ -822,11 +819,35 @@ printf("Pas trouve //derterminator, nb=%d\n",nb);
 	// Ajout d'un nouveau noeud
 	roxml_add_node(lstNodes[0], 0, ROXML_ATTR_NODE, "guid", newId);		
 printf("attribut ajouté\n");
+
+printf("Nouvel arbre determinator\n");
     char *writeBuffer = NULL;
   roxml_commit_changes (lstNodes[0], NULL, &writeBuffer, 1);
 printf("%s\n",  writeBuffer);
 
 
+
+
+	lstNodes = roxml_xpath (rootConfig, "//determinators", &nb );
+	if ( nb != 1 )
+    {
+printf("Pas trouve //determinators, nb=%d\n",nb);
+        XHCP_printXHCPResponse (sockd, RES_INTNERROR); // Internal error
+        return -1;
+    }
+
+	/* On ratache le nouveau determinator à la liste */
+ roxml_parent_node(lstNodes[0], nTmp);
+	
+
+
+printf("Nouvel arbre config\n");
+    char *zaza = NULL;
+  roxml_commit_changes (rootConfig, NULL, &zaza, 1);
+printf("%s\n",  zaza);
+
+	
+	
     free(newId);
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
     

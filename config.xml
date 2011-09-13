@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <XHCPserver>
-<ConnectionTimeOut delay="30" />
+<ConnectionTimeOut delay="300" />
 </XHCPserver>
  <determinators>
   <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="vdfvgd" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">

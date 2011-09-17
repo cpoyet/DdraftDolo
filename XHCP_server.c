@@ -775,7 +775,6 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
 	// A supprimer !!!
     char *zaza = NULL;
 
-    
     printf ("Entree XHCPcmd_SETRULE_handle avec %d arguments\n", argc);
                    int i;
                     for ( i=0; i<argc; i++ )
@@ -843,16 +842,18 @@ printf("Pas trouve //determinators, nb=%d\n",nb);
 
 	/* On ratache le nouveau determinator à la liste */
 	roxml_parent_node(lstNodes[0], nTmp);
+		
 	
+	saveHal4lConfig (HAL4L_getConfigFile ());
+	//roxml_close (nTmp);
+	
+	
+    loadHal4lConfig (HAL4L_getConfigFile ());
 
 
-printf("Nouvel arbre config\n");
-roxml_commit_changes (rootConfig, NULL, &zaza, 1);
-printf("%s\n",  zaza);
-free(zaza);
-	
-	
     free(newId);
+
+
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
     
     return 0;

@@ -48,6 +48,9 @@ int getOptions ( int argc, char **argv)
 int loadHal4lConfig (char *fileName)
 {
     printf ("Loading xPLHal4L server configuration...\n");
+	
+	if ( rootConfig != NULL )
+		 roxml_close (rootConfig);
     
     if ( fileName == NULL )
         Error_Quit ("Unable to load xPLHal4L config file");
@@ -57,6 +60,22 @@ int loadHal4lConfig (char *fileName)
     
     return 0;
     
+}
+
+int saveHal4lConfig (char *fileName)
+{
+	int szBuffer = 0;
+	char * buffer = NULL;
+	FILE * file_out;
+
+	szBuffer = roxml_commit_changes(rootConfig, NULL, &buffer, 1);
+
+	file_out = fopen(fileName, "w");
+	fwrite(buffer, 1, szBuffer, file_out);
+	fclose(file_out);
+
+	printf("Fichier config sauvegarde\n");
+	return 0;
 }
 
 int main (int argc, String argv[])
@@ -74,6 +93,9 @@ int main (int argc, String argv[])
         fprintf (stderr, "Unable to start xPL");
         exit (1);
     }
+
+	/* Initialize global variables */
+	rootConfig = NULL;
     
     if (!getOptions (argc, argv))
     {

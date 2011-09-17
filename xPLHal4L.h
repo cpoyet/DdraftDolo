@@ -38,6 +38,10 @@
 #define HAL4L_setConfigFile(V) HAL4L_configFile=V
 #define HAL4L_getConfigFile() HAL4L_configFile
 
+/* Prototypes ********************************************************************/
+EXT_XPLHAL4L int saveHal4lConfig (char *);
+EXT_XPLHAL4L int loadHal4lConfig (char *);
+
 /* Variables globales ************************************************************/
 EXT_XPLHAL4L char *HAL4L_configFile;
 EXT_XPLHAL4L node_t *rootConfig;

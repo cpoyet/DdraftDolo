@@ -165,6 +165,7 @@ EXT_XHCP_SERVER int XHCPcmd_LISTRULES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETRULE ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SETRULE ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SHUTDOWN ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_GETCONFIGXML ( int, int, char **);
 
 
 /* Variables globales ************************************************************/
@@ -193,7 +194,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_DELGLOBAL       , "DELGLOBAL"        , NULL },  
 				{ CMD_DELRULE         , "DELRULE"          , NULL },
 				{ CMD_DELSCRIPT       , "DELSCRIPT"        , NULL },  
-				{ CMD_GETCONFIGXML    , "GETCONFIGXML"     , NULL },
+				{ CMD_GETCONFIGXML    , "GETCONFIGXML"     , XHCPcmd_GETCONFIGXML },
 				{ CMD_GETDEVCONFIG    , "GETDEVCONFIG"     , NULL },
 				{ CMD_GETDEVCONFIGVALUE,"GETDEVCONFIGVALUE", NULL },
 				{ CMD_GETERRLOG       , "GETERRLOG"        , NULL },  

@@ -771,6 +771,10 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
     node_t **lstNodes;
     char *newId = NULL;
     int nb;
+
+	// A supprimer !!!
+    char *zaza = NULL;
+
     
     printf ("Entree XHCPcmd_SETRULE_handle avec %d arguments\n", argc);
                    int i;
@@ -789,11 +793,10 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
     
 	if ( argc == 2 ) // pas de node mais id donné en argument
 		newId = strdup(argv[1]);
-printf("apres argc id = %s\n",newId==NULL ? "NULL":newId);
+
 		// On recherche si un id est présent
     if ( (lstNodes = roxml_xpath (nTmp, "//determinator[@guid]", &nb )) != NULL )
 	{
-printf("guid présent dans le XML\n");
 		node_t *attr_tmp = roxml_get_attr (lstNodes[0], "guid", 0);
 
 		if ( newId == NULL && argc == 1 )
@@ -803,27 +806,29 @@ printf("guid présent dans le XML\n");
 
 		roxml_del_node(attr_tmp);
 	}
-printf("apres xpath id = %s\n",newId==NULL ? "NULL":newId);
 	if ( newId == NULL )
 		newId = XHCP_getUuid();
 
 printf("a la fin id = %s\n",newId==NULL ? "NULL":newId);
 		
 	lstNodes = roxml_xpath (nTmp, "//determinator", &nb );
-	if ( nb != 1 )
+	if ( nb == 1 )
+		nTmp = lstNodes[0];
+	else
     {
 printf("Pas trouve //derterminator, nb=%d\n",nb);
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
         return -1;
     }
+	
 	// Ajout d'un nouveau noeud
-	roxml_add_node(lstNodes[0], 0, ROXML_ATTR_NODE, "guid", newId);		
+	roxml_add_node(nTmp, 0, ROXML_ATTR_NODE, "guid", newId);		
 printf("attribut ajouté\n");
 
 printf("Nouvel arbre determinator\n");
-    char *writeBuffer = NULL;
-  roxml_commit_changes (lstNodes[0], NULL, &writeBuffer, 1);
-printf("%s\n",  writeBuffer);
+roxml_commit_changes (nTmp, NULL, &zaza, 1);
+printf("%s\n",  zaza);
+free(zaza);
 
 
 
@@ -837,15 +842,14 @@ printf("Pas trouve //determinators, nb=%d\n",nb);
     }
 
 	/* On ratache le nouveau determinator à la liste */
- roxml_parent_node(lstNodes[0], nTmp);
+	roxml_parent_node(lstNodes[0], nTmp);
 	
 
 
 printf("Nouvel arbre config\n");
-    char *zaza = NULL;
-  roxml_commit_changes (rootConfig, NULL, &zaza, 1);
+roxml_commit_changes (rootConfig, NULL, &zaza, 1);
 printf("%s\n",  zaza);
-
+free(zaza);
 	
 	
     free(newId);
@@ -860,6 +864,22 @@ int XHCPcmd_SETRULE (int sockd, int argc, char **argv)
     
     XHCP_setAdditionalDataHandler (XHCPcmd_SETRULE_handle);
     
+    return 1;
+}
+
+int XHCPcmd_GETCONFIGXML (int sockd, int argc, char **argv)
+{
+    char *writeBuffer = NULL;
+    
+	XHCP_printXHCPResponse (sockd, RES_CFGDOCFOL ); // Configuration document follows
+	
+	roxml_commit_changes (rootConfig, NULL, &writeBuffer, 1);
+	
+	XHCP_print (sockd, writeBuffer);
+	XHCP_print (sockd, ".");
+	
+	free (writeBuffer);
+
     return 1;
 }
 

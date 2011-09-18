@@ -15,21 +15,15 @@
 #include <arpa/inet.h>        /*  inet (3) funtions         */
 #include <unistd.h>           /*  misc. UNIX functions      */
 #include <sys/time.h>         /*  For select()  */
-//#include <sys/systeminfo.h>
-//#include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <uuid/uuid.h>
 
 #include <roxml.h>
-//#include <xPL.h>
 
 #include "XHCP_server.h"
 #include "xPLHal4L.h"
 
 /*  Global macros/variables  */
-
-
-
 #define XHCP_version "1.5"
 
 #define LISTENQ                  	(1024)
@@ -41,6 +35,15 @@
 #ifndef UUID_PRINTABLE_STRING_LENGTH
 #define UUID_PRINTABLE_STRING_LENGTH 37
 #endif
+
+
+enum XHCPstate_list
+{
+	XHCPstate_init,
+	XHCPstate_waitConnect,
+	XHCPstate_waitCommand,
+	XHCPstate_waitData
+} XHCP_running_status = XHCPstate_init;
 
 
 node_t *domConfig;
@@ -547,7 +550,152 @@ int loadConfig (node_t* argXmlConfig)
     return 0;
 }
 
-int XHCP_server (node_t* argXmlConfig)
+
+int XHCP_server ()
+{
+	switch (XHCP_running_status)
+	{
+		/* ------------------------------------------------------------------------ */
+		case (XHCPstate_init):
+
+			/*  Create socket  */
+			if ( (listener = socket (AF_INET, SOCK_STREAM, 0)) < 0 )
+				Error_Quit ("Couldn't create listening socket.");
+			
+			
+			/*  Populate socket address structure  */
+			memset (&servaddr, 0, sizeof(servaddr));
+			servaddr.sin_family      = AF_INET;
+			servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+			servaddr.sin_port        = htons (XHCP_SERVER_PORT);
+			
+
+
+			/* "Address already in use" error message killer !!!! */
+			int tr=1;
+			if (setsockopt(listener,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
+				perror("setsockopt");
+				exit(1);
+			}    
+			/*  Assign socket address to socket  */
+			if ( bind (listener, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
+			{
+				perror("Bind");
+				Error_Quit ("Couldn't bind listening socket.");
+			}
+			
+			/*  Make socket a listening socket  */
+			if ( listen (listener, LISTENQ) < 0 )
+				Error_Quit ("Call to listen failed.");
+			
+			
+			XHCP_customWelcomeMessage ();
+		
+			/* L'initialisation est terminée, on passe à la suite */
+			XHCP_running_status = XHCPstate_waitConnect;
+			
+			/* Pas de break !!!*/
+			
+		case (XHCPstate_waitConnect):
+		
+			/*  Wait for connection  */
+			
+			if ( (conn = accept (listener, NULL, NULL)) < 0 )
+			{
+				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
+				{
+					return;
+				}
+				else
+					Error_Quit ("Error calling accept()");
+			
+			}
+			//TODO Gestion du timeout
+			
+			XHCP_printXHCPResponse (conn, RES_HALWELCOM );  // Petit message de bienevenue
+			
+			XHCP_running_status = XHCPstate_waitCommand;
+		
+			/* Pas de break !!!*/
+			
+		case (XHCPstate_waitCommand):
+		
+			if ( recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT) <0 )
+			{
+				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
+				{
+					//TODO Gestion du timeout
+					return;
+				}
+				else
+					Error_Quit ("Error calling accept()");
+			
+			}
+			
+			printf ("Ligne lue : %s\n", buffer);
+
+			cut_Line (buffer, &argc, argv);
+
+			printf ("%d arguments :\n", argc);
+			int i;
+			for ( i=0; i<argc; i++ )
+				printf ( "%d - %s\n", i, argv[i]);
+
+			status = exec_Line (conn, argc, argv ); // We compute the line...
+			
+			switch (status)
+			{
+				case -1:  // deconnexion
+					break;
+				case 0:   // Fin de la commande
+					return;
+					break;
+				default : // On continue
+			}
+
+			XHCP_running_status = XHCPstate_waitData;
+			/* Pas de break !!!*/
+
+		case (XHCPstate_waitData):
+			
+			if ( recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT) <0 )
+			{
+				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
+				{
+					//TODO Gestion du timeout
+					return;
+				}
+				else
+					Error_Quit ("Error calling accept()");
+			
+			}
+
+			/* We suppress all extra characters on the right except '.' and '>' */
+			Trim (buffer, 1);
+
+			/* The handler is activate, so all lignes are added in buffer */
+			if ( buffer[0] == '.' &&  buffer[1] == '\0')
+			{
+				additionalDataHandler (conn, argc, argv, additionalDataBuffer );
+				additionalDataHandler = NULL;
+				free (additionalDataBuffer);
+				additionalDataBuffer = NULL;
+			}
+			else
+			{
+				additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
+			}
+
+
+
+			
+			XHCP_running_status = XHCPstate_waitConnect;
+			
+	}
+}
+
+
+int _XHCP_server (node_t* argXmlConfig)
 {
     int    listener, conn;
     pid_t  pid;

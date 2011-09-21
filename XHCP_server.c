@@ -42,7 +42,9 @@ enum XHCPstate_list
 	XHCPstate_init,
 	XHCPstate_waitConnect,
 	XHCPstate_waitCommand,
-	XHCPstate_waitData
+	XHCPstate_waitData,
+	XHCPstate_endConnect,
+	XHCPstate_death
 } XHCP_running_status = XHCPstate_init;
 
 
@@ -379,7 +381,7 @@ int exec_Line (int conn, int argc, char **argv)
     return retValue;
 }
 
-int getXHCPRequest (int conn)
+int _getXHCPRequest (int conn)
 {
     
     char   buffer[MAX_REQ_LINE] = {0};
@@ -508,7 +510,7 @@ void XHCP_getSystemInfos ()
     XHCP_sysArchi = strdup (sys_infos.machine);
 }
 
-int loadConfig (node_t* argXmlConfig)
+int XHCP_loadConfig (node_t* argXmlConfig)
 {
     node_t **result;
     int nb_result;
@@ -551,13 +553,31 @@ int loadConfig (node_t* argXmlConfig)
 }
 
 
-int XHCP_server ()
+int XHCP_server (node_t* argXmlConfig)
 {
+    static int listener;
+	static int conn;
+    static pid_t  pid;
+    static struct sockaddr_in servaddr;
+
+    static char *additionalDataBuffer=NULL;
+    static int argc = 0;
+    static char *argv[MAX_CMD_ARGS+1];
+   
+    char	buffer[MAX_REQ_LINE] = {0};
+	int		status;
+
+	
 	switch (XHCP_running_status)
 	{
 		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_init):
 
+			XHCP_getSystemInfos ();
+			
+			XHCP_loadConfig(argXmlConfig);
+    
+    
 			/*  Create socket  */
 			if ( (listener = socket (AF_INET, SOCK_STREAM, 0)) < 0 )
 				Error_Quit ("Couldn't create listening socket.");
@@ -568,15 +588,16 @@ int XHCP_server ()
 			servaddr.sin_family      = AF_INET;
 			servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
 			servaddr.sin_port        = htons (XHCP_SERVER_PORT);
+
 			
-
-
 			/* "Address already in use" error message killer !!!! */
 			int tr=1;
-			if (setsockopt(listener,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
+			if (setsockopt(listener,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1)
+			{
 				perror("setsockopt");
 				exit(1);
-			}    
+			}
+			
 			/*  Assign socket address to socket  */
 			if ( bind (listener, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
 			{
@@ -594,17 +615,16 @@ int XHCP_server ()
 			/* L'initialisation est terminée, on passe à la suite */
 			XHCP_running_status = XHCPstate_waitConnect;
 			
-			/* Pas de break !!!*/
+			/* No break, we continue !!!*/
 			
 		case (XHCPstate_waitConnect):
 		
 			/*  Wait for connection  */
-			
 			if ( (conn = accept (listener, NULL, NULL)) < 0 )
 			{
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
-					return;
+					return XHCP_running_status;
 				}
 				else
 					Error_Quit ("Error calling accept()");
@@ -612,11 +632,11 @@ int XHCP_server ()
 			}
 			//TODO Gestion du timeout
 			
-			XHCP_printXHCPResponse (conn, RES_HALWELCOM );  // Petit message de bienevenue
+			XHCP_printXHCPResponse (conn, RES_HALWELCOM );  // Petit message de bienvenue
 			
 			XHCP_running_status = XHCPstate_waitCommand;
 		
-			/* Pas de break !!!*/
+			/* No break, we continue !!!*/
 			
 		case (XHCPstate_waitCommand):
 		
@@ -625,7 +645,7 @@ int XHCP_server ()
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
 					//TODO Gestion du timeout
-					return;
+					return XHCP_running_status;
 				}
 				else
 					Error_Quit ("Error calling accept()");
@@ -648,13 +668,15 @@ int XHCP_server ()
 				case -1:  // deconnexion
 					break;
 				case 0:   // Fin de la commande
-					return;
+					XHCP_running_status = XHCPstate_waitCommand;
+					return XHCP_running_status;
 					break;
-				default : // On continue
+				// default : // On continue
 			}
 
 			XHCP_running_status = XHCPstate_waitData;
-			/* Pas de break !!!*/
+			
+			/* No break, we continue !!!*/
 
 		case (XHCPstate_waitData):
 			
@@ -663,7 +685,7 @@ int XHCP_server ()
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
 					//TODO Gestion du timeout
-					return;
+					return XHCP_running_status;
 				}
 				else
 					Error_Quit ("Error calling accept()");
@@ -689,9 +711,23 @@ int XHCP_server ()
 
 
 			
+			XHCP_running_status = XHCPstate_waitCommand;
+			
+			break;
+			
+		case (XHCPstate_endConnect):
+		    if ( close (conn) < 0 )
+				Error_Quit ("Error closing connection socket in parent.");
+
 			XHCP_running_status = XHCPstate_waitConnect;
+
+			
+		//default :  /* (XHCPstate_death) */
+			/* Do nothing ... */
 			
 	}
+	
+	return XHCP_running_status;
 }
 
 
@@ -705,7 +741,7 @@ int _XHCP_server (node_t* argXmlConfig)
     
     XHCP_getSystemInfos ();
     
-    loadConfig (argXmlConfig);
+    XHCP_loadConfig (argXmlConfig);
     
     
     
@@ -755,7 +791,7 @@ int _XHCP_server (node_t* argXmlConfig)
         
         XHCP_printXHCPResponse (conn, RES_HALWELCOM );  //
         
-        while  ( (retStatus = getXHCPRequest (conn)) > 0 );
+        while  ( (retStatus = _getXHCPRequest (conn)) > 0 );
         
         if ( retStatus == 0 )
         {
@@ -831,7 +867,7 @@ int XHCPcmd_PUTCONFIGXML_handle (int sockd, int argc, char **argv, char *data)
     rootConfig = tmp;
     
     
-    loadConfig (rootConfig);
+    XHCP_loadConfig (rootConfig);
     printf ("loadConfig OK\n");
     
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded

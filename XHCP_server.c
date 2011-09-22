@@ -37,15 +37,7 @@
 #endif
 
 
-enum XHCPstate_list
-{
-	XHCPstate_init,
-	XHCPstate_waitConnect,
-	XHCPstate_waitCommand,
-	XHCPstate_waitData,
-	XHCPstate_endConnect,
-	XHCPstate_death
-} XHCP_running_status = XHCPstate_init;
+
 
 
 node_t *domConfig;
@@ -564,8 +556,8 @@ int XHCP_server (node_t* argXmlConfig)
     static int argc = 0;
     static char *argv[MAX_CMD_ARGS+1];
    
-    char	buffer[MAX_REQ_LINE] = {0};
-	int		status;
+    static char	buffer[MAX_REQ_LINE] = {0};
+	int		status, nbCar;
 
 	
 	switch (XHCP_running_status)
@@ -617,6 +609,7 @@ int XHCP_server (node_t* argXmlConfig)
 			
 			/* No break, we continue !!!*/
 			
+		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_waitConnect):
 		
 			/*  Wait for connection  */
@@ -638,9 +631,10 @@ int XHCP_server (node_t* argXmlConfig)
 		
 			/* No break, we continue !!!*/
 			
+		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_waitCommand):
 		
-			if ( recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT) <0 )
+			if ( (nbCar = recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT)) <0 )
 			{
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
@@ -652,6 +646,13 @@ int XHCP_server (node_t* argXmlConfig)
 			
 			}
 			
+			buffer[nbCar]='\0';
+
+            Trim (buffer, 0); // We suppress all extra characters
+                
+			if ( buffer[0] == '\0' )
+				return XHCP_running_status; // We continue....
+
 			printf ("Ligne lue : %s\n", buffer);
 
 			cut_Line (buffer, &argc, argv);
@@ -662,13 +663,14 @@ int XHCP_server (node_t* argXmlConfig)
 				printf ( "%d - %s\n", i, argv[i]);
 
 			status = exec_Line (conn, argc, argv ); // We compute the line...
-			
+			printf("Ligne executee, statut = %d\n",status);
 			switch (status)
 			{
 				case -1:  // deconnexion
+					XHCP_running_status = XHCPstate_endConnect;
+					return XHCP_running_status;
 					break;
 				case 0:   // Fin de la commande
-					XHCP_running_status = XHCPstate_waitCommand;
 					return XHCP_running_status;
 					break;
 				// default : // On continue
@@ -678,9 +680,10 @@ int XHCP_server (node_t* argXmlConfig)
 			
 			/* No break, we continue !!!*/
 
+		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_waitData):
 			
-			if ( recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT) <0 )
+			if ( (nbCar = recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT)) <0 )
 			{
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
@@ -692,6 +695,7 @@ int XHCP_server (node_t* argXmlConfig)
 			
 			}
 
+			buffer[nbCar]='\0';
 			/* We suppress all extra characters on the right except '.' and '>' */
 			Trim (buffer, 1);
 
@@ -702,20 +706,22 @@ int XHCP_server (node_t* argXmlConfig)
 				additionalDataHandler = NULL;
 				free (additionalDataBuffer);
 				additionalDataBuffer = NULL;
+
+				XHCP_running_status = XHCPstate_waitCommand;
 			}
 			else
 			{
 				additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
 			}
 
-
-
-			
-			XHCP_running_status = XHCPstate_waitCommand;
 			
 			break;
 			
+		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_endConnect):
+		
+			XHCP_printXHCPResponse (conn, RES_CLOCONBYE ); 
+			 
 		    if ( close (conn) < 0 )
 				Error_Quit ("Error closing connection socket in parent.");
 
@@ -812,7 +818,7 @@ int _XHCP_server (node_t* argXmlConfig)
 
 int XHCPcmd_QUIT (int sockd, int argc, char **argv)
 {
-    return 0;
+    return -1;
 }
 
 int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
@@ -821,7 +827,7 @@ int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
     
     XHCP_printMessage (sockd, 221, "Shuting down in progress ... Good night... !!" );
     
-    return 0;
+    return -1;
 }
 
 int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
@@ -848,7 +854,7 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
         XHCP_print (sockd, "." );
     
     
-    return 1;
+    return 0;
 }
 
 int XHCPcmd_PUTCONFIGXML_handle (int sockd, int argc, char **argv, char *data)
@@ -906,7 +912,7 @@ int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
     }
     
     XHCP_print (sockd, ".");
-    return 1;
+    return 0;
 }
 
 
@@ -946,7 +952,7 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     
     
     
-    return 1;
+    return 0;
 }
 
 int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
@@ -969,7 +975,7 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
     if ( (nTmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
-        return -1;
+        return 0;
     }
     
     printf ("Chargement XML OK\n");
@@ -1001,7 +1007,7 @@ printf("a la fin id = %s\n",newId==NULL ? "NULL":newId);
     {
 printf("Pas trouve //derterminator, nb=%d\n",nb);
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
-        return -1;
+        return 0;
     }
 	
 	// Ajout d'un nouveau noeud
@@ -1021,7 +1027,7 @@ free(zaza);
     {
 printf("Pas trouve //determinators, nb=%d\n",nb);
         XHCP_printXHCPResponse (sockd, RES_INTNERROR); // Internal error
-        return -1;
+        return 0;
     }
 
 	/* On ratache le nouveau determinator à la liste */
@@ -1065,6 +1071,6 @@ int XHCPcmd_GETCONFIGXML (int sockd, int argc, char **argv)
 	
 	free (writeBuffer);
 
-    return 1;
+    return 0;
 }
 

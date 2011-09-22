@@ -156,6 +156,16 @@ typedef struct
 	char *str;
 } XHCP_response;
 
+EXT_XHCP_SERVER enum XHCPstate_list
+{
+	XHCPstate_init,
+	XHCPstate_waitConnect,
+	XHCPstate_waitCommand,
+	XHCPstate_waitData,
+	XHCPstate_endConnect,
+	XHCPstate_death
+};
+
 
 /* Prototypes ********************************************************************/
 EXT_XHCP_SERVER int XHCPcmd_QUIT ( int, int, char **);
@@ -178,11 +188,14 @@ EXT_XHCP_SERVER int XHCP_connexionTimeOut;
 
 
 #ifndef _XHCP_SERVER_C_
+EXT_XHCP_SERVER XHCP_running_status;
 
 EXT_XHCP_SERVER XHCP_command *XHCP_commandList;
 EXT_XHCP_SERVER XHCP_response *XHCP_responseList;
 
 #else
+
+EXT_XHCP_SERVER XHCP_running_status = XHCPstate_init;
 
 EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_ADDEVENT        , "ADDEVENT"         , NULL }, 

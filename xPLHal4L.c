@@ -111,7 +111,41 @@ int main (int argc, String argv[])
     
     loadHal4lConfig (HAL4L_getConfigFile ());
     
-    
-    XHCP_server (rootConfig);
+    while ( !stop)
+	{
+		enum XHCPstate_list toto;
+		enum XHCPstate_list oldToto;
+		toto = XHCP_server (rootConfig);
+		if ( toto != oldToto )
+		{
+			printf("Statut : ");
+			switch (toto)
+			{
+				case XHCPstate_init:
+					printf("XHCPstate_init\n");
+					break;
+				case XHCPstate_waitConnect:
+					printf("XHCPstate_waitConnect\n");
+					break;
+				case XHCPstate_waitCommand:
+					printf("XHCPstate_waitCommand\n");
+					break;
+				case XHCPstate_waitData:
+					printf("XHCPstate_waitData\n");
+					break;
+				case XHCPstate_endConnect:
+					printf("XHCPstate_endConnect\n");
+					break;
+				case XHCPstate_death:
+					printf("XHCPstate_death\n");
+					break;
+				default:
+					printf("autre...\n");
+					break;
+			}
+			oldToto = toto;
+		}
+		usleep(10000);
+	}
     
 }

@@ -616,9 +616,7 @@ int XHCP_server (node_t* argXmlConfig)
 			if ( (conn = accept (listener, NULL, NULL)) < 0 )
 			{
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
-				{
-					return XHCP_running_status;
-				}
+					break;
 				else
 					Error_Quit ("Error calling accept()");
 			
@@ -639,7 +637,7 @@ int XHCP_server (node_t* argXmlConfig)
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
 					//TODO Gestion du timeout
-					return XHCP_running_status;
+					break;
 				}
 				else
 					Error_Quit ("Error calling accept()");
@@ -651,7 +649,7 @@ int XHCP_server (node_t* argXmlConfig)
             Trim (buffer, 0); // We suppress all extra characters
                 
 			if ( buffer[0] == '\0' )
-				return XHCP_running_status; // We continue....
+				break; // We continue....
 
 			printf ("Ligne lue : %s\n", buffer);
 
@@ -663,19 +661,15 @@ int XHCP_server (node_t* argXmlConfig)
 				printf ( "%d - %s\n", i, argv[i]);
 
 			status = exec_Line (conn, argc, argv ); // We compute the line...
-			printf("Ligne executee, statut = %d\n",status);
-			switch (status)
-			{
-				case -1:  // deconnexion
-					XHCP_running_status = XHCPstate_endConnect;
-					return XHCP_running_status;
-					break;
-				case 0:   // Fin de la commande
-					return XHCP_running_status;
-					break;
-				// default : // On continue
-			}
 
+			if ( status == -1 )
+			{
+				XHCP_running_status = XHCPstate_endConnect;
+				break;
+			}
+			else if ( status == 0 )
+				break;
+				
 			XHCP_running_status = XHCPstate_waitData;
 			
 			/* No break, we continue !!!*/
@@ -688,7 +682,7 @@ int XHCP_server (node_t* argXmlConfig)
 				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
 				{
 					//TODO Gestion du timeout
-					return XHCP_running_status;
+					break;
 				}
 				else
 					Error_Quit ("Error calling accept()");
@@ -728,8 +722,9 @@ int XHCP_server (node_t* argXmlConfig)
 			XHCP_running_status = XHCPstate_waitConnect;
 
 			
-		//default :  /* (XHCPstate_death) */
+		case (XHCPstate_death):
 			/* Do nothing ... */
+			break;
 			
 	}
 	

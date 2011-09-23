@@ -2,6 +2,9 @@
  <XHCPserver>
   <ConnectionTimeOut delay="300"/>
  </XHCPserver>
+ <timer>
+  <tick interval="5"/>
+ </timer>
  <determinators>
   <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="vdfvgd" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
    <input match="all">

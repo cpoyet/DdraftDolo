@@ -133,7 +133,7 @@ int xpl4l_timer(node_t* argXmlConfig)
 	}
 	
 	t2 = time (NULL);
-printf("%d, %d\n",t2, t2%60);
+//printf("%d, %d\n",t2, t2%60);
 
 	if ( t2%delay==0 && t1!=t2)
 	{
@@ -185,7 +185,8 @@ int main (int argc, String argv[])
     
     while ( !stop)
 	{
-		enum XHCPstate_list toto;
+/*
+	enum XHCPstate_list toto;
 		enum XHCPstate_list oldToto;
 
 		xpl4l_timer(rootConfig);
@@ -221,9 +222,27 @@ int main (int argc, String argv[])
 			}
 			oldToto = toto;
 		}
-		
-		
-		usleep(10000);
-	}
+*/
+
+		write(STDOUT_FILENO,"|\x0D",2);
+		xpl4l_timer(rootConfig);
+		XHCP_server (rootConfig);
+		usleep(100000);
+
+		write(STDOUT_FILENO,"/\x0D",2);
+		xpl4l_timer(rootConfig);
+		XHCP_server (rootConfig);
+		usleep(100000);
+
+		write(STDOUT_FILENO,"-\x0D",2);
+		xpl4l_timer(rootConfig);
+		XHCP_server (rootConfig);
+		usleep(100000);
+
+		write(STDOUT_FILENO,"\\\x0D",2);
+		xpl4l_timer(rootConfig);
+		XHCP_server (rootConfig);
+		usleep(100000);
+		}
     
 }

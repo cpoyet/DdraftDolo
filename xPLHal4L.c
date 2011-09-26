@@ -3,6 +3,7 @@
 
 #include "xPLHal4L.h"
 
+
 int stop = 0;
 
 int getOptions ( int argc, char **argv)
@@ -78,77 +79,37 @@ int saveHal4lConfig (char *fileName)
 	return 0;
 }
 
-
-int timer_loadConfig (node_t* argXmlConfig, int *delay)
+int anim(int style)
 {
-    node_t **result;
-    int nb_result;
-    char buffer[80];
-    int sz_buffer;
-    char *xhcp_fileName;
-    
-    printf ("Loading timer configuration...\n");
-    
- 
-    
-    /* Time Out */
-    result = roxml_xpath ( argXmlConfig, "//timer/tick[@interval]", &nb_result);
-    if ( nb_result == 1 )
-    {
-        char *zaza = roxml_get_content ( roxml_get_attr (result[0], "interval", 0), buffer, 80, &sz_buffer );
-        *delay = atoi (zaza);
-        
-        if ( *delay <= 0 )
-            *delay=5;
-    }
-    else if ( nb_result == 0)
-    {
-        *delay = 5;
-    }
-    else
-        Error_Quit ("Erroe parsing timer config file (interval)");
-    
-    roxml_release (RELEASE_LAST);
-    printf ("*delay = %d\n", *delay);
-    
-    
-    return 0;
-}
-
-
-int xpl4l_timer(node_t* argXmlConfig)
-{
-	static init = 1;
-    static time_t t1;
-	static delay;
-	time_t t2;
-    struct tm *ts;
-    char       buf[80];
-
-	if ( init )
-	{
-		t1 = 0;
-		timer_loadConfig (argXmlConfig, &delay);
-		init = 0;
-	}
+	char *bt="|/-\\";
+	static int i = 0;
+	static int sens = 0;
 	
-	t2 = time (NULL);
-//printf("%d, %d\n",t2, t2%60);
-
-	if ( t2%delay==0 && t1!=t2)
+	switch (style)
 	{
-		ts = localtime(&t2);
-		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);
-		printf("%s\n", buf);
-
-		//sendClockTick ();
-		printf ("Message sending...\n");
-		t1 = t2;
+		case 1:
+			i = (unsigned int) (++i % 4);
+			write(STDOUT_FILENO, bt+i,1);
+			write(STDOUT_FILENO,"\x0D",1);
+			break;
+		case 2:
+			if ( i == 0 )
+				sens = 1;
+			else if ( i == 10 )
+				sens = 0;
+			if (sens )
+				i++;
+			else
+				i--;
+				
+			//i = (unsigned int) (++i % 9)+1;
+			write(STDOUT_FILENO, "                              ",i);
+			write(STDOUT_FILENO, "- \x0D\x0D",4);
+			write(STDOUT_FILENO,"\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D",i);
+			break;
 	}
-
-
+		
 }
-
 
 int main (int argc, String argv[])
 {
@@ -224,25 +185,11 @@ int main (int argc, String argv[])
 		}
 */
 
-		write(STDOUT_FILENO,"|\x0D",2);
+		anim(2);
 		xpl4l_timer(rootConfig);
 		XHCP_server (rootConfig);
 		usleep(100000);
+	}
 
-		write(STDOUT_FILENO,"/\x0D",2);
-		xpl4l_timer(rootConfig);
-		XHCP_server (rootConfig);
-		usleep(100000);
 
-		write(STDOUT_FILENO,"-\x0D",2);
-		xpl4l_timer(rootConfig);
-		XHCP_server (rootConfig);
-		usleep(100000);
-
-		write(STDOUT_FILENO,"\\\x0D",2);
-		xpl4l_timer(rootConfig);
-		XHCP_server (rootConfig);
-		usleep(100000);
-		}
-    
 }

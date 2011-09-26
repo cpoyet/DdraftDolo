@@ -24,6 +24,8 @@
 //#include "./sqlite/sqlite3.h"
 
 #include "XHCP_server.h"
+#include "xPLHal_scheduler.h"
+
 
 #define XPLHAL4L_VERSION "0.0.1"
 #define XPLHAL4L_VENDOR "xPLHal4L"

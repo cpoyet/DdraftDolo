@@ -11,9 +11,16 @@ xPL_MessagePtr clockTickMessage = NULL;
 xPL_MessagePtr schedulerTickMessage = NULL;
 
 
-void clockMessageHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+void clockMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 {
-    fprintf (stderr, "Received a Clock Message from %s-%s.%s of type %d for %s.%s\n",
+    printf ( "Received a Message from %s-%s.%s of type %d for %s.%s\n",
+    xPL_getSourceVendor (theMessage), xPL_getSourceDeviceID (theMessage), xPL_getSourceInstanceID (theMessage),
+    xPL_getMessageType (theMessage), xPL_getSchemaClass (theMessage), xPL_getSchemaType (theMessage));
+}
+
+void clockServiceHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+{
+    printf ( "Received a Clock Message from %s-%s.%s of type %d for %s.%s\n",
     xPL_getSourceVendor (theMessage), xPL_getSourceDeviceID (theMessage), xPL_getSourceInstanceID (theMessage),
     xPL_getMessageType (theMessage), xPL_getSchemaClass (theMessage), xPL_getSchemaType (theMessage));
     
@@ -88,7 +95,8 @@ int xpl4l_timer(node_t* argXmlConfig)
     xPL_setServiceVersion (clockService, XPLHAL4L_VERSION);
 
 	/* Add a responder for time setting */
-		xPL_addServiceListener (clockService, clockMessageHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
+//		xPL_addServiceListener (clockService, clockServiceHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
+ xPL_addMessageListener(clockMessageHandler, NULL);
 		
 		/* Create a message to send */
 		clockTickMessage = xPL_createBroadcastMessage (clockService, xPL_MESSAGE_STATUS);
@@ -111,8 +119,10 @@ int xpl4l_timer(node_t* argXmlConfig)
     
     /* Broadcast the message */
     xPL_sendMessage (clockTickMessage);
+
+
+xPL_dispatchMessageEvent(clockTickMessage);
     
-		printf ("Message sending...\n");
 		t1 = t2;
 	}
 

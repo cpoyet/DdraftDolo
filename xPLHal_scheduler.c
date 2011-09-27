@@ -19,31 +19,43 @@ void clockMessageHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, 
     
 }
 
-int timer_loadConfig (node_t* argXmlConfig, int *delay)
+int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
 {
     node_t **result;
     int nb_result;
     char buffer[80];
     int sz_buffer;
     char *xhcp_fileName;
+	char *tmp;
     
     printf ("Loading timer configuration...\n");
     
- 
+	/* Default values */
+	*clock_enabled = 0;
+	*delay = 5;
+	
+	/* Enabled */
+    result = roxml_xpath ( argXmlConfig, "//timer[@enabled]", &nb_result);
+    if ( nb_result == 1 )
+    {
+        tmp = roxml_get_content ( roxml_get_attr (result[0], "enabled", 0), buffer, 80, &sz_buffer );
+        *clock_enabled = atoi (tmp);
+        
+        if ( *clock_enabled <= 0 )
+            *clock_enabled=0;
+    }
+   else
+        Error_Quit ("Erroe parsing timer config file (clock_enabled)");
     
     /* Time Out */
     result = roxml_xpath ( argXmlConfig, "//timer/tick[@interval]", &nb_result);
     if ( nb_result == 1 )
     {
-        char *zaza = roxml_get_content ( roxml_get_attr (result[0], "interval", 0), buffer, 80, &sz_buffer );
-        *delay = atoi (zaza);
+        tmp = roxml_get_content ( roxml_get_attr (result[0], "interval", 0), buffer, 80, &sz_buffer );
+        *delay = atoi (tmp);
         
         if ( *delay <= 0 )
             *delay=5;
-    }
-    else if ( nb_result == 0)
-    {
-        *delay = 5;
     }
     else
         Error_Quit ("Erroe parsing timer config file (interval)");
@@ -60,7 +72,8 @@ int xpl4l_timer(node_t* argXmlConfig)
 {
 	static init = 1;
     static time_t t1;
-	static delay;
+	static int delay;
+	static int clock_enabled;
 	time_t t2;
     struct tm *ts;
     char       buf[80];
@@ -68,7 +81,7 @@ int xpl4l_timer(node_t* argXmlConfig)
 	if ( init )
 	{
 		t1 = 0;
-		timer_loadConfig (argXmlConfig, &delay);
+		timer_loadConfig (argXmlConfig, &delay, &clock_enabled);
 		init = 0;
 		
     clockService = xPL_createService ("dolo", "clock", "default");

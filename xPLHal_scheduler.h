@@ -15,7 +15,7 @@
 /* Macros ********************************************************/
 
 /* Prototypes ********************************************************************/
-EXT_XPLHAL_SCHEDULER int timer_loadConfig (node_t* , int *);
+EXT_XPLHAL_SCHEDULER int timer_loadConfig (node_t* , int *, int*);
 EXT_XPLHAL_SCHEDULER int xpl4l_timer(node_t* );
 
 /* Variables globales ************************************************************/

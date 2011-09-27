@@ -81,7 +81,7 @@ int saveHal4lConfig (char *fileName)
 
 int anim(int style)
 {
-	char *bt="|/-\\";
+	char *bt="\\|/-";
 	static int i = 0;
 	static int sens = 0;
 	
@@ -102,10 +102,22 @@ int anim(int style)
 			else
 				i--;
 				
-			//i = (unsigned int) (++i % 9)+1;
 			write(STDOUT_FILENO, "                              ",i);
-			write(STDOUT_FILENO, "- \x0D\x0D",4);
-			write(STDOUT_FILENO,"\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D\x0D",i);
+			write(STDOUT_FILENO, "- \x0D",3);
+			break;
+		case 3:
+			if ( i == 0 )
+				sens = 1;
+			else if ( i == 15 )
+				sens = 0;
+			if (sens )
+				i++;
+			else
+				i--;
+				
+			write(STDOUT_FILENO, "                              ",i);
+			write(STDOUT_FILENO, bt+(i%4),1);
+			write(STDOUT_FILENO, " \x0D",2);
 			break;
 	}
 		
@@ -185,7 +197,7 @@ int main (int argc, String argv[])
 		}
 */
 
-		anim(2);
+		anim(3);
 		xpl4l_timer(rootConfig);
 		XHCP_server (rootConfig);
 		usleep(100000);

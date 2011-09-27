@@ -2,7 +2,7 @@
  <XHCPserver>
   <ConnectionTimeOut delay="300"/>
  </XHCPserver>
- <timer>
+ <timer enabled="1" >
   <tick interval="5"/>
  </timer>
  <determinators>

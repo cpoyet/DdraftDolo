@@ -30,7 +30,7 @@ char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 {
     node_t **result;
     int nb_result;
-    char buffer[80];
+    static char buffer[80];
     int sz_buffer;
 	char *tmp;
 
@@ -39,7 +39,9 @@ char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 	sprintf(xpath,"%s[@%s]",nodeXpath,attrName);
     result = roxml_xpath ( argXmlConfig, xpath, &nb_result);
     if ( nb_result == 1 )
+	{
         tmp = roxml_get_content ( roxml_get_attr (result[0], attrName, 0), buffer, 80, &sz_buffer );
+	}
 	else
 	{
 		fprintf(stderr,"ERROR Parsing %s (%d results)\n",xpath,nb_result);
@@ -47,10 +49,33 @@ char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 	}
 	free(xpath);
 	roxml_release (RELEASE_LAST);
-	
+
 	return tmp;
 }
 
+int xmlGetBoolAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
+{
+	int i=0;
+	char *trueLst[] = {"TRUE","1","ON","VRAI",NULL};
+	char *falseLst[] = {"FALSE","0","OFF","FAUX",NULL};
+	
+	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName);
+	
+	do
+	{
+		if ( strcasecmp (trueLst[i], attr) == 0 )
+			return 1;
+	} while ( trueLst[++i]!=NULL );
+	
+	return 0;
+}
+
+int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
+{
+	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName);
+	
+	return atoi(attr);
+}
 
 int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
 {
@@ -63,14 +88,11 @@ int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
 	*delay = 5;
 	
 	/* Enabled */
-		
-	*clock_enabled = atoi(xmlGetAttribut (argXmlConfig, "//timer/xplclock", "enabled"));
-	if 	( (*clock_enabled) < 0 )
-		  *clock_enabled=0;
+	*clock_enabled = xmlGetBoolAttribut (argXmlConfig, "//clocking/xplclock", "enabled");
     
     /* Time Out */
     
-	*delay = atoi(xmlGetAttribut (argXmlConfig, "//timer/internal", "interval"));
+	*delay = xmlGetIntAttribut (argXmlConfig, "//clocking/internal", "interval");
 	if ( *delay <= 0 )
 		*delay=5;
 	
@@ -78,6 +100,7 @@ int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
 	
 	
     
+    printf ("*clock_enabled = %d\n", *clock_enabled);
     printf ("*delay = %d\n", *delay);
     
     

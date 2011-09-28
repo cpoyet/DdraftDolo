@@ -26,14 +26,35 @@ void clockServiceHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, 
     
 }
 
-int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
+char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 {
     node_t **result;
     int nb_result;
     char buffer[80];
     int sz_buffer;
-    char *xhcp_fileName;
 	char *tmp;
+
+	char *xpath = (char *)malloc(strlen(nodeXpath)+strlen(attrName)+4);
+	
+	sprintf(xpath,"%s[@%s]",nodeXpath,attrName);
+    result = roxml_xpath ( argXmlConfig, xpath, &nb_result);
+    if ( nb_result == 1 )
+        tmp = roxml_get_content ( roxml_get_attr (result[0], attrName, 0), buffer, 80, &sz_buffer );
+	else
+	{
+		fprintf(stderr,"ERROR Parsing %s (%d results)\n",xpath,nb_result);
+        Error_Quit ("Error parsing timer config file");
+	}
+	free(xpath);
+	roxml_release (RELEASE_LAST);
+	
+	return tmp;
+}
+
+
+int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
+{
+    char *xhcp_fileName;
     
     printf ("Loading timer configuration...\n");
     
@@ -42,32 +63,21 @@ int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
 	*delay = 5;
 	
 	/* Enabled */
-    result = roxml_xpath ( argXmlConfig, "//timer[@enabled]", &nb_result);
-    if ( nb_result == 1 )
-    {
-        tmp = roxml_get_content ( roxml_get_attr (result[0], "enabled", 0), buffer, 80, &sz_buffer );
-        *clock_enabled = atoi (tmp);
-        
-        if ( *clock_enabled <= 0 )
-            *clock_enabled=0;
-    }
-   else
-        Error_Quit ("Erroe parsing timer config file (clock_enabled)");
+		
+	*clock_enabled = atoi(xmlGetAttribut (argXmlConfig, "//timer/xplclock", "enabled"));
+	if 	( (*clock_enabled) < 0 )
+		  *clock_enabled=0;
     
     /* Time Out */
-    result = roxml_xpath ( argXmlConfig, "//timer/tick[@interval]", &nb_result);
-    if ( nb_result == 1 )
-    {
-        tmp = roxml_get_content ( roxml_get_attr (result[0], "interval", 0), buffer, 80, &sz_buffer );
-        *delay = atoi (tmp);
-        
-        if ( *delay <= 0 )
-            *delay=5;
-    }
-    else
-        Error_Quit ("Erroe parsing timer config file (interval)");
     
-    roxml_release (RELEASE_LAST);
+	*delay = atoi(xmlGetAttribut (argXmlConfig, "//timer/internal", "interval"));
+	if ( *delay <= 0 )
+		*delay=5;
+	
+	
+	
+	
+    
     printf ("*delay = %d\n", *delay);
     
     

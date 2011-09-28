@@ -12,7 +12,15 @@
 
 
 
-/* Macros ********************************************************/
+/* Macros ************************************************************************/
+
+/* Definitions de types **********************************************************/
+typedef struct TIMER_CONFIG
+	{
+		int clock_enabled;
+		int clock_interval;
+		int sched_interval;
+	};
 
 /* Prototypes ********************************************************************/
 EXT_XPLHAL_SCHEDULER int timer_loadConfig (node_t* , int *, int*);

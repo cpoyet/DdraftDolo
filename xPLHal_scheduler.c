@@ -26,7 +26,7 @@ void clockServiceHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, 
     
 }
 
-char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
+char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
 {
     node_t **result;
     int nb_result;
@@ -42,7 +42,11 @@ char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 	{
         tmp = roxml_get_content ( roxml_get_attr (result[0], attrName, 0), buffer, 80, &sz_buffer );
 	}
-	else
+	else if ( nb_result == 0 && opt )
+	{
+		tmp="";
+	}
+	else	
 	{
 		fprintf(stderr,"ERROR Parsing %s (%d results)\n",xpath,nb_result);
         Error_Quit ("Error parsing timer config file");
@@ -53,13 +57,13 @@ char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 	return tmp;
 }
 
-int xmlGetBoolAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
+int xmlGetBoolAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
 {
 	int i=0;
 	char *trueLst[] = {"TRUE","1","ON","VRAI",NULL};
 	char *falseLst[] = {"FALSE","0","OFF","FAUX",NULL};
 	
-	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName);
+	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName, opt);
 	
 	do
 	{
@@ -70,39 +74,60 @@ int xmlGetBoolAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
 	return 0;
 }
 
-int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName)
+int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
 {
-	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName);
+	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName, opt);
 	
 	return atoi(attr);
 }
 
-int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
+twilight_t getTWtypeFromStr (char * str)
 {
-    char *xhcp_fileName;
+	if ( str == NULL || str[0]=='\0' )
+		return TWLIGHT_SUN;
+		
+	if ( strcasecmp(str,"sun") == 0 )
+		return TWLIGHT_SUN;
+		
+	if ( strcasecmp(str,"civil") == 0 )
+		return TWLIGHT_CIVIL;
+		
+	if ( strcasecmp(str,"nautical") == 0 )
+		return TWLIGHT_NAUTICAL;
+		
+	if ( strcasecmp(str,"astronotical") == 0 )
+		return TWLIGHT_ASTRONOMICAL;
+		
+	return TWLIGHT_SUN;
+}
+
+//int timer_loadConfig (node_t* argXmlConfig, int *delay, int *clock_enabled)
+int timer_loadConfig (node_t *argXmlConfig )
+{
+    char *tmp;
     
     printf ("Loading timer configuration...\n");
     
-	/* Default values */
-	*clock_enabled = 0;
-	*delay = 5;
 	
-	/* Enabled */
-	*clock_enabled = xmlGetBoolAttribut (argXmlConfig, "//clocking/xplclock", "enabled");
+	/* Clock */
+	timerConfig.clock_enabled = xmlGetBoolAttribut (argXmlConfig, "//clocking/xplclock", "enabled", 1);
+	timerConfig.clock_interval = xmlGetIntAttribut (argXmlConfig, "//clocking/xplclock", "interval", 0);
+	if ( timerConfig.clock_interval <= 0 ) timerConfig.clock_interval=60;
     
-    /* Time Out */
+    /* internal tip */
+	timerConfig.sched_interval = xmlGetIntAttribut (argXmlConfig, "//clocking/internal", "interval", 0);
+	if ( timerConfig.sched_interval <= 0 ) timerConfig.sched_interval=5;
+	
+	/* Sunset - Sunrise */
+	timerConfig.dawn_enabled = xmlGetBoolAttribut (argXmlConfig, "//clocking/twilight/dawn", "enabled", 1);
+	timerConfig.dawn_type = getTWtypeFromStr ( xmlGetAttribut(argXmlConfig, "//clocking/twilight/dawn", "type", 1) );
+	timerConfig.dusk_enabled = xmlGetBoolAttribut (argXmlConfig, "//clocking/twilight/dusk", "enabled", 1);
+	timerConfig.dusk_type = getTWtypeFromStr ( xmlGetAttribut(argXmlConfig, "//clocking/twilight/dusk", "type", 1) );
+		
+    printf ("*clock_enabled = %d\n", timerConfig.clock_enabled);
+    printf ("*delay = %d\n", timerConfig.sched_interval);
     
-	*delay = xmlGetIntAttribut (argXmlConfig, "//clocking/internal", "interval");
-	if ( *delay <= 0 )
-		*delay=5;
-	
-	
-	
-	
-    
-    printf ("*clock_enabled = %d\n", *clock_enabled);
-    printf ("*delay = %d\n", *delay);
-    
+	 printf (" timerConfig.dusk_type = %s\n", TWtypeToStr (timerConfig.dusk_type) );
     
     return 0;
 }
@@ -112,7 +137,7 @@ int xpl4l_timer(node_t* argXmlConfig)
 {
 	static init = 1;
     static time_t t1;
-	static int delay;
+	//static int delay;
 	static int clock_enabled;
 	time_t t2;
     struct tm *ts;
@@ -121,7 +146,7 @@ int xpl4l_timer(node_t* argXmlConfig)
 	if ( init )
 	{
 		t1 = 0;
-		timer_loadConfig (argXmlConfig, &delay, &clock_enabled);
+		timer_loadConfig (argXmlConfig);
 		init = 0;
 		
     clockService = xPL_createService ("dolo", "clock", "default");
@@ -140,7 +165,8 @@ int xpl4l_timer(node_t* argXmlConfig)
 	t2 = time (NULL);
 //printf("%d, %d\n",t2, t2%60);
 
-	if ( t2%delay==0 && t1!=t2)
+	//if ( t2%delay==0 && t1!=t2)
+	if ( t2%timerConfig.sched_interval==0 && t1!=t2)
 	{
 		ts = localtime(&t2);
 		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);

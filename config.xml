@@ -1,10 +1,14 @@
  <?xml version="1.0" encoding="utf-8"?>
+ <location>
+  <latitude>48.376126</latitude>
+  <longitude>2.810753</longitude>
+ </location>
  <XHCPserver>
   <ConnectionTimeOut delay="300"/>
  </XHCPserver>
  <clocking>
   <xplclock enabled="true" interval="60"/>
-  <internal interval="50"/>
+  <internal interval="60"/>
   <twilight>
     <dawn enabled="true" type="civil"/>
     <dusk enabled="true" type="nautical"/>

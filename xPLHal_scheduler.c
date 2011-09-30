@@ -136,25 +136,23 @@ int timer_loadConfig (node_t *argXmlConfig )
 int xpl4l_timer(node_t* argXmlConfig)
 {
 	static init = 1;
-    static time_t t1;
-	//static int delay;
-	static int clock_enabled;
-	time_t t2;
+    static time_t oldClockTime, oldTickTime;
+	time_t t;
     struct tm *ts;
     char       buf[80];
 
 	if ( init )
 	{
-		t1 = 0;
+		t = 0;
 		timer_loadConfig (argXmlConfig);
 		init = 0;
 		
-    clockService = xPL_createService ("dolo", "clock", "default");
-    xPL_setServiceVersion (clockService, XPLHAL4L_VERSION);
+		clockService = xPL_createService ("dolo", "clock", "default");
+		xPL_setServiceVersion (clockService, XPLHAL4L_VERSION);
 
-	/* Add a responder for time setting */
-//		xPL_addServiceListener (clockService, clockServiceHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
- xPL_addMessageListener(clockMessageHandler, NULL);
+		/* Add a responder for time setting */
+		xPL_addServiceListener (clockService, clockServiceHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
+		xPL_addMessageListener(clockMessageHandler, NULL);
 		
 		/* Create a message to send */
 		clockTickMessage = xPL_createBroadcastMessage (clockService, xPL_MESSAGE_STATUS);
@@ -162,27 +160,33 @@ int xpl4l_timer(node_t* argXmlConfig)
 
 	}
 	
-	t2 = time (NULL);
-//printf("%d, %d\n",t2, t2%60);
+	t = time (NULL);
+	ts = localtime(&t);
 
-	//if ( t2%delay==0 && t1!=t2)
-	if ( t2%timerConfig.sched_interval==0 && t1!=t2)
+	if ( timerConfig.clock_enabled && t%timerConfig.clock_interval==0 && t!=oldClockTime)
 	{
-		ts = localtime(&t2);
+		strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", ts);
+		
+		/* Install the value and send the message */
+		xPL_setMessageNamedValue (clockTickMessage, "time", buf);
+		
+		/* Broadcast the message */
+		xPL_sendMessage (clockTickMessage);
+
+		oldClockTime = t;
+	}
+	
+	if ( t%timerConfig.sched_interval==0 && t!=oldTickTime)
+	{
 		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);
-		printf("%s\n", buf);
 
-    strftime (buf, 24, "%Y%m%d%H%M%S", ts);
-    /* Install the value and send the message */
-    xPL_setMessageNamedValue (clockTickMessage, "time", buf);
+		/* Install the value and send the message */
+		xPL_setMessageNamedValue (clockTickMessage, "time", buf);
+		
+
+		xPL_dispatchMessageEvent(clockTickMessage);
     
-    /* Broadcast the message */
-    xPL_sendMessage (clockTickMessage);
-
-
-xPL_dispatchMessageEvent(clockTickMessage);
-    
-		t1 = t2;
+		oldTickTime = t;
 	}
 
 

@@ -68,6 +68,10 @@ theService = xPL_AllocService(); -> (malloc(sizeof(xPL_Service)))
 
 
 -- Création manuelle d'un message
+/* Attention a compléter..., deux manières de créer un message, voir fonctions createReceivedMessage() et createSendableMessage() */
+/* Allocate the message */
+theMessage = xPL_AllocMessage();
+
 xPL_setMessageType(theMessage, xPL_MessageType type); (type=xPL_MESSAGE_COMMAND|xPL_MESSAGE_STATUS|xPL_MESSAGE_TRIGGER)
 
 theMessage->hopCount = hopCount;

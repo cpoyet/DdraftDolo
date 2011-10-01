@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <sys/utsname.h>
 
 #include <time.h>
 #include <signal.h>
@@ -47,6 +48,11 @@ EXT_XPLHAL4L int loadHal4lConfig (char *);
 /* Variables globales ************************************************************/
 EXT_XPLHAL4L char *HAL4L_configFile;
 EXT_XPLHAL4L node_t *rootConfig;
+
+EXT_XPLHAL4L char *HAL4L_sysName;
+EXT_XPLHAL4L char *HAL4L_hostName;
+EXT_XPLHAL4L char *HAL4L_sysArchi;
+
 
 EXT_XPLHAL4L int stop;
 

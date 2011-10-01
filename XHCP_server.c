@@ -15,7 +15,6 @@
 #include <arpa/inet.h>        /*  inet (3) funtions         */
 #include <unistd.h>           /*  misc. UNIX functions      */
 #include <sys/time.h>         /*  For select()  */
-#include <sys/utsname.h>
 #include <uuid/uuid.h>
 #include <fcntl.h>
 
@@ -228,66 +227,6 @@ char * toUpper (char *str)
     
     return str;
 }
-/*
- int Parse_Line (int conn, char *buffer)
- {
- char *line=NULL;
- char *argv[MAX_CMD_ARGS+1];
- int  argc=0;
-
- char *token, *svgptr;
- int i;
-
- XHCP_command *cmd;
-
- int retValue=0;
-
- if ( (line = strdup (buffer)) == NULL )
- return -1;
-
- token = strtok_r (line, " ", &svgptr);
- if (token != NULL)
- {
- argv[argc++]=token;
- while ( argc<=MAX_CMD_ARGS && (token = strtok_r (NULL, " ", &svgptr)) != NULL  )
- {
- argv[argc++]=token;
- }
-
- toUpper (argv[0]);
-
- for ( cmd = XHCP_commandList; cmd->id != END_CMD; cmd++ )
- if ( strcmp (argv[0], cmd->str) == 0 ) break;
-
- if ( cmd->id == END_CMD )
- {
- XHCP_printXHCPResponse (conn, RES_COMNOTREC );
- retValue = 1;
- }
- else
- {
- if ( cmd->fnct == NULL )
- {
- XHCP_printMessage (conn, 500, "Command not implemented" );
- retValue = 1;
- }
- else
- retValue = cmd->fnct (conn, argc, argv);
- }
-
-
- printf ("%d arguments :\n", argc);
- for ( i=0; i<argc; i++ )
- printf ( "%d - %s\n", i, argv[i]);
-
-
- }
-
- free (line);
-
- return retValue;
- }
- */
 
 char *addBuffer ( char *buffer, char*str)
 {
@@ -374,133 +313,18 @@ int exec_Line (int conn, int argc, char **argv)
     return retValue;
 }
 
-int _getXHCPRequest (int conn)
-{
-    
-    char   buffer[MAX_REQ_LINE] = {0};
-    int    rval;
-    fd_set fds;
-    struct timeval tv;
-    int status = 0;
-    char *additionalDataBuffer=NULL;
-    int argc = 0;
-    char *argv[MAX_CMD_ARGS+1];
-    
-    
-    /*  Set timeout  */
-    tv.tv_sec  = XHCP_connexionTimeOut;
-    tv.tv_usec = 0;
-    
-    
-    /*  Loop through request headers. If we have a simple request,
-     then we will loop only once. Otherwise, we will loop until
-     we receive a blank line which signifies the end of the headers,
-     or until select() times out, whichever is sooner.                */
-    do
-    {
-        /*  Reset file descriptor set  */
-        FD_ZERO (&fds);
-        FD_SET (conn, &fds);
-        
-        /*  Wait until the timeout to see if input is ready  */
-        rval = select (conn + 1, &fds, NULL, NULL, &tv);
-        
-        
-        /*  Take appropriate action based on return from select()  */
-        if ( rval < 0 )
-        {
-            Error_Quit ("Error calling select() in get_request()");
-            status = -1;
-        }
-        else if ( rval == 0 )
-        {
-            /*  input not ready after timeout  */
-            XHCP_printXHCPResponse (conn, RES_CONTIMOUT );  // 221 Connexion time-out
-            status = 0;
-        }
-        else
-        {
-            /*  We have an input line waiting, so retrieve it  */
-            Readline (conn, buffer, MAX_REQ_LINE - 1);
-            
-            /* If we are not waiting for additional data the function handler should be not null*/
-            if ( additionalDataHandler == NULL )
-            {
-                Trim (buffer, 0); // We suppress all extra characters
-                
-                if ( buffer[0] == '\0' )
-                    status=1; // We continue....
-                else
-                {
-                    printf ("Ligne lue : %s\n", buffer);
-                    
-                    cut_Line (buffer, &argc, argv);
-                    
-                    printf ("%d arguments :\n", argc);
-                    int i;
-                    for ( i=0; i<argc; i++ )
-                        printf ( "%d - %s\n", i, argv[i]);
-                    
-                    status = exec_Line (conn, argc, argv ); // We compute the line...
-                }
-            }
-            else
-            {
-                /* We suppress all extra characters on the right except '.' and '>' */
-                Trim (buffer, 1);
-                
-                /* The handler is activate, so all lignes are added in buffer */
-                if ( buffer[0] == '.' &&  buffer[1] == '\0')
-                {
-                    additionalDataHandler (conn, argc, argv, additionalDataBuffer );
-                    additionalDataHandler = NULL;
-                    free (additionalDataBuffer);
-                    additionalDataBuffer = NULL;
-                }
-                else
-                {
-                    additionalDataBuffer = addBuffer (additionalDataBuffer, buffer);
-                }
-                
-                
-            }
-            
-            
-        }
-    } while ( status > 0 );
-    
-    return status;
-}
-
-
 void XHCP_customWelcomeMessage ()
 {
     
     XHCP_response *resp;
     char buffer[256];
     
-    sprintf (buffer, "%s.%s (%s/%s) Version %s XHCP %s ready", XPLHAL4L_VENDOR, XHCP_hostName, XHCP_sysName, XHCP_sysArchi, XPLHAL4L_VERSION, XHCP_version);
+    sprintf (buffer, "%s.%s (%s/%s) Version %s XHCP %s ready", XPLHAL4L_VENDOR, HAL4L_hostName, HAL4L_sysName, HAL4L_sysArchi, XPLHAL4L_VERSION, XHCP_version);
     
     for ( resp = &XHCP_responseList[0]; resp->id != END_RES && resp->id != RES_HALWELCOM; resp++);
     
     resp->str=strdup (buffer);
     
-}
-
-void XHCP_getSystemInfos ()
-{
-    
-    char buffer[256];
-    
-    struct utsname sys_infos;
-    
-    
-    if ( (uname (&sys_infos)) < 0 )
-        Error_Quit ("Couldn't read system informations.");
-    
-    XHCP_hostName = strdup (sys_infos.nodename);
-    XHCP_sysName = strdup (sys_infos.sysname);
-    XHCP_sysArchi = strdup (sys_infos.machine);
 }
 
 int XHCP_loadConfig (node_t* argXmlConfig)
@@ -566,8 +390,6 @@ int XHCP_server (node_t* argXmlConfig)
 		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_init):
 
-			XHCP_getSystemInfos ();
-			
 			XHCP_loadConfig(argXmlConfig);
     
     
@@ -737,86 +559,6 @@ int XHCP_server (node_t* argXmlConfig)
 	}
 	
 	return XHCP_running_status;
-}
-
-
-int _XHCP_server (node_t* argXmlConfig)
-{
-    int    listener, conn;
-    pid_t  pid;
-    struct sockaddr_in servaddr;
-    int retStatus;
-    
-    
-    XHCP_getSystemInfos ();
-    
-    XHCP_loadConfig (argXmlConfig);
-    
-    
-    
-    /*  Create socket  */
-    if ( (listener = socket (AF_INET, SOCK_STREAM, 0)) < 0 )
-        Error_Quit ("Couldn't create listening socket.");
-    
-    
-    /*  Populate socket address structure  */
-    memset (&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family      = AF_INET;
-    servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
-    servaddr.sin_port        = htons (XHCP_SERVER_PORT);
-    
-
-
-    /* "Address already in use" error message killer !!!! */
-    int tr=1;
-    if (setsockopt(listener,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
-        perror("setsockopt");
-        exit(1);
-    }    
-    /*  Assign socket address to socket  */
-    if ( bind (listener, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
-    {
-        perror("Bind");
-        Error_Quit ("Couldn't bind listening socket.");
-    }
-    
-    /*  Make socket a listening socket  */
-    if ( listen (listener, LISTENQ) < 0 )
-        Error_Quit ("Call to listen failed.");
-    
-    
-    XHCP_customWelcomeMessage ();
-    
-    
-    /*  Loop infinitely to accept and service connections  */
-    
-    while ( ! stop )
-    {
-        
-        /*  Wait for connection  */
-        
-        if ( (conn = accept (listener, NULL, NULL)) < 0 )
-            Error_Quit ("Error calling accept()");
-        
-        XHCP_printXHCPResponse (conn, RES_HALWELCOM );  //
-        
-        while  ( (retStatus = _getXHCPRequest (conn)) > 0 );
-        
-        if ( retStatus == 0 )
-        {
-            XHCP_printXHCPResponse (conn, RES_CLOCONBYE );  // Closing connection - good bye
-        }
-        
-        /*  If we get here, we are still in the parent process,
-         so close the connected socket, clean up child processes,
-         and go back to accept a new connection.                   */
-        
-        if ( close (conn) < 0 )
-            Error_Quit ("Error closing connection socket in parent.");
-        
-    }
-    
-    return 0;
 }
 
 int XHCPcmd_QUIT (int sockd, int argc, char **argv)

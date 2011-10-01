@@ -128,6 +128,23 @@ int anim(int style)
 		
 }
 
+
+void xpl4l_getSystemInfos ()
+{
+    
+    char buffer[256];
+    
+    struct utsname sys_infos;
+    
+    
+    if ( (uname (&sys_infos)) < 0 )
+        Error_Quit ("Couldn't read system informations.");
+    
+    HAL4L_hostName = strdup (sys_infos.nodename);
+    HAL4L_sysName = strdup (sys_infos.sysname);
+    HAL4L_sysArchi = strdup (sys_infos.machine);
+}
+
 int main (int argc, String argv[])
 {
     /* Parse command line parms */
@@ -146,7 +163,8 @@ int main (int argc, String argv[])
 
 	/* Initialize global variables */
 	rootConfig = NULL;
-    
+	xpl4l_getSystemInfos ();
+			
     if (!getOptions (argc, argv))
     {
         fprintf (stderr, "Error parsing common args");
@@ -163,8 +181,10 @@ int main (int argc, String argv[])
     
     while ( !stop)
 	{
-/*
-	enum XHCPstate_list toto;
+
+		anim(4);
+
+		enum XHCPstate_list toto;
 		enum XHCPstate_list oldToto;
 
 		xpl4l_timer(rootConfig);
@@ -173,38 +193,13 @@ int main (int argc, String argv[])
 		toto = XHCP_server (rootConfig);
 		if ( toto != oldToto )
 		{
-			printf("Statut : ");
-			switch (toto)
-			{
-				case XHCPstate_init:
-					printf("XHCPstate_init\n");
-					break;
-				case XHCPstate_waitConnect:
-					printf("XHCPstate_waitConnect\n");
-					break;
-				case XHCPstate_waitCommand:
-					printf("XHCPstate_waitCommand\n");
-					break;
-				case XHCPstate_waitData:
-					printf("XHCPstate_waitData\n");
-					break;
-				case XHCPstate_endConnect:
-					printf("XHCPstate_endConnect\n");
-					break;
-				case XHCPstate_death:
-					printf("XHCPstate_death\n");
-					break;
-				default:
-					printf("autre...\n");
-					break;
-			}
+			printf("Statut : %s\n", XHCPstate2String(toto));
 			oldToto = toto;
 		}
-*/
 
-		anim(4);
-		xpl4l_timer(rootConfig);
-		XHCP_server (rootConfig);
+
+//		xpl4l_timer(rootConfig);
+//		XHCP_server (rootConfig);
 		usleep(100000);
 	}
 

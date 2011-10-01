@@ -30,6 +30,13 @@
 #define XHCP_setAdditionalDataHandler(V) additionalDataHandler=V
 
 
+#define XHCPstate2String(X) ( ( X == XHCPstate_init ? "XHCPstate_init" : \
+							  ( X == XHCPstate_waitConnect ? "XHCPstate_waitConnect" : \
+							  ( X == XHCPstate_waitCommand ? "XHCPstate_waitCommand" : \
+							  ( X == XHCPstate_waitData ? "XHCPstate_waitData" : \
+							  ( X == XHCPstate_endConnect ? "XHCPstate_endConnect" : \
+							  ( X == XHCPstate_death ? "XHCPstate_death" : "unknow..." )))))) )
+
 EXT_XHCP_SERVER enum _XHCP_command_id {	CMD_ADDEVENT        , 
 				CMD_ADDSINGLEEVENT  , 
 				CMD_CAPABILITIES    , 
@@ -179,9 +186,6 @@ EXT_XHCP_SERVER int XHCPcmd_GETCONFIGXML ( int, int, char **);
 
 
 /* Variables globales ************************************************************/
-EXT_XHCP_SERVER char *XHCP_sysName;
-EXT_XHCP_SERVER char *XHCP_hostName;
-EXT_XHCP_SERVER char *XHCP_sysArchi;
 EXT_XHCP_SERVER char *XHCP_configFile;
 
 EXT_XHCP_SERVER int XHCP_connexionTimeOut;

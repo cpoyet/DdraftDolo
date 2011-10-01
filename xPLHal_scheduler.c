@@ -11,11 +11,32 @@ xPL_MessagePtr clockTickMessage = NULL;
 xPL_MessagePtr schedulerTickMessage = NULL;
 
 
-void clockMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 {
-    printf ( "Received a Message from %s-%s.%s of type %d for %s.%s\n",
-    xPL_getSourceVendor (theMessage), xPL_getSourceDeviceID (theMessage), xPL_getSourceInstanceID (theMessage),
-    xPL_getMessageType (theMessage), xPL_getSchemaClass (theMessage), xPL_getSchemaType (theMessage));
+    node_t **result;
+    int nb_result;
+
+
+	char *sourceVendor = xPL_getSourceVendor (theMessage);
+	char *sourceDeviceID = xPL_getSourceDeviceID (theMessage);
+	char *sourceInstanceID = xPL_getSourceInstanceID (theMessage);
+	xPL_MessageType messgeType = xPL_getMessageType (theMessage);
+	char *schemaClass = xPL_getSchemaClass (theMessage);
+	char *schemaType = xPL_getSchemaType (theMessage);
+
+	printf ( "Received a Message from %s-%s.%s of type %d for %s.%s\n",
+										sourceVendor, sourceDeviceID, sourceInstanceID, messgeType, schemaClass, schemaType);
+	if ( strcmp(schemaClass, "internal") == 0)
+	{
+		if ( strcmp(schemaType, "tick") == 0 )
+		{
+			/* On recherche tous les determinators contenant des conditions de temps */
+			result = roxml_xpath ( rootConfig, "//determinator//timeCondition", &nb_result);
+			printf("%d timeConditions trouvées\n",nb_result);
+			
+		}
+	}
+
 }
 
 void clockServiceHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
@@ -114,7 +135,7 @@ int timer_loadConfig (node_t *argXmlConfig )
 	timerConfig.clock_interval = xmlGetIntAttribut (argXmlConfig, "//clocking/xplclock", "interval", 0);
 	if ( timerConfig.clock_interval <= 0 ) timerConfig.clock_interval=60;
     
-    /* internal tip */
+    /* internal tick */
 	timerConfig.sched_interval = xmlGetIntAttribut (argXmlConfig, "//clocking/internal", "interval", 0);
 	if ( timerConfig.sched_interval <= 0 ) timerConfig.sched_interval=5;
 	
@@ -127,11 +148,35 @@ int timer_loadConfig (node_t *argXmlConfig )
     printf ("*clock_enabled = %d\n", timerConfig.clock_enabled);
     printf ("*delay = %d\n", timerConfig.sched_interval);
     
-	 printf (" timerConfig.dusk_type = %s\n", TWtypeToStr (timerConfig.dusk_type) );
+	printf (" timerConfig.dusk_type = %s\n", TWtypeToStr (timerConfig.dusk_type) );
     
     return 0;
 }
 
+
+xPL_MessagePtr createInternalTickMessage()
+{
+	xPL_MessagePtr tick_mess;
+
+	/* Allocate the message */
+	tick_mess = xPL_AllocMessage();
+
+	/* Set the version (NOT DYNAMIC) */
+	tick_mess->messageType = xPL_MESSAGE_TRIGGER;
+	tick_mess->receivedMessage = TRUE;
+
+	/* Allocate a name/value list, if needed */
+	if (tick_mess->messageBody == NULL) tick_mess->messageBody = xPL_AllocNVList();
+	
+	/* Install source into message */
+	xPL_setSource(tick_mess, XPLHAL4L_VENDOR, SCHEDULER_DEVICEID, HAL4L_hostName);
+
+	xPL_setTarget(tick_mess, XPLHAL4L_VENDOR, SCHEDULER_DEVICEID, HAL4L_hostName);
+
+	xPL_setSchema(tick_mess, "internal", "tick");
+
+	return tick_mess;
+}
 
 int xpl4l_timer(node_t* argXmlConfig)
 {
@@ -141,23 +186,30 @@ int xpl4l_timer(node_t* argXmlConfig)
     struct tm *ts;
     char       buf[80];
 
+	Bool ret;
+	
 	if ( init )
 	{
 		t = 0;
 		timer_loadConfig (argXmlConfig);
 		init = 0;
 		
-		clockService = xPL_createService ("dolo", "clock", "default");
+		clockService = xPL_createService (XPLHAL4L_VENDOR, "clock", HAL4L_hostName);
 		xPL_setServiceVersion (clockService, XPLHAL4L_VERSION);
 
 		/* Add a responder for time setting */
 		xPL_addServiceListener (clockService, clockServiceHandler, xPL_MESSAGE_ANY, "clock", NULL, NULL);
-		xPL_addMessageListener(clockMessageHandler, NULL);
 		
 		/* Create a message to send */
 		clockTickMessage = xPL_createBroadcastMessage (clockService, xPL_MESSAGE_STATUS);
+		
 		xPL_setSchema (clockTickMessage, "clock", "update");
 
+		/* Internals messages */
+		schedulerTickMessage = createInternalTickMessage();
+		xPL_addMessageListener(internalMessageHandler, NULL);
+		
+		
 	}
 	
 	t = time (NULL);
@@ -165,6 +217,7 @@ int xpl4l_timer(node_t* argXmlConfig)
 
 	if ( timerConfig.clock_enabled && t%timerConfig.clock_interval==0 && t!=oldClockTime)
 	{
+
 		strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", ts);
 		
 		/* Install the value and send the message */
@@ -175,18 +228,20 @@ int xpl4l_timer(node_t* argXmlConfig)
 
 		oldClockTime = t;
 	}
-	
+
 	if ( t%timerConfig.sched_interval==0 && t!=oldTickTime)
 	{
 		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);
-
-		/* Install the value and send the message */
-		xPL_setMessageNamedValue (clockTickMessage, "time", buf);
 		
+		/* Crée le messageBody si NULL et y ajoute une seule ligne si elle n'existe pas, sinon la met à jour */
+		xPL_setMessageNamedValue(schedulerTickMessage, "time", buf);
 
-		xPL_dispatchMessageEvent(clockTickMessage);
+		ret = xPL_dispatchMessageEvent(schedulerTickMessage);
+
+		printf ("Message dispatched = %s\n", ret == TRUE ? "TRUE":"FALSE");
     
 		oldTickTime = t;
+
 	}
 
 

@@ -11,10 +11,16 @@
 #include <roxml.h>
 #include <strings.h>
 
+/* Constantes ********************************************************************/
+#define SCHEDULER_DEVICEID "scheduler"
 
 /* Macros ************************************************************************/
-#define TWtypeToStr(X) ( (X == TWLIGHT_SUN ? "SUN" : (X == TWLIGHT_CIVIL ? "CIVIL" : (X == TWLIGHT_NAUTICAL ? "NAUTICAL" : (X == TWLIGHT_ASTRONOMICAL ? "ASTRONOMICAL" : "UNKNOWN")))) )
+#define TWtypeToStr(X) ( ( X == TWLIGHT_SUN ? "SUN" : \
+						 ( X == TWLIGHT_CIVIL ? "CIVIL" : \
+					     ( X == TWLIGHT_NAUTICAL ? "NAUTICAL" : \
+					     ( X == TWLIGHT_ASTRONOMICAL ? "ASTRONOMICAL" : "UNKNOWN" )))) )
 
+#define boolToStr(X) ( X == 0 ? "FALSE" : "TRUE" ) 
 /* Definitions de types **********************************************************/
 typedef enum _twilight_type { TWLIGHT_SUN, TWLIGHT_CIVIL, TWLIGHT_NAUTICAL, TWLIGHT_ASTRONOMICAL } twilight_t;
 

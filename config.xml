@@ -7,8 +7,8 @@
   <ConnectionTimeOut delay="300"/>
  </XHCPserver>
  <clocking>
-  <xplclock enabled="true" interval="60"/>
-  <internal interval="60"/>
+  <xplclock enabled="true" interval="10"/>
+  <internal interval="5"/>
   <twilight>
     <dawn enabled="true" type="civil"/>
     <dusk enabled="true" type="nautical"/>
@@ -17,7 +17,7 @@
  <determinators>
   <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="vdfvgd" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
    <input match="all">
-    <timeCondition display_name="premiere condition test" operator="&gt;" value="21:39"/>
+    <timeCondition display_name="premiere condition test" operator="&gt;" category="time" value="21:39"/>
    </input>
    <output>
     <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>
@@ -25,7 +25,7 @@
   </determinator>
   <determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="determinator2" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="N">
    <input match="all">
-    <timeCondition display_name="premiere condition test" operator="&gt;" value="21:39"/>
+    <timeCondition display_name="deuxieme condition test" operator="&gt;" category="date" value="3oct2011"/>
    </input>
    <output>
     <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>
@@ -36,7 +36,7 @@
   <determinator guid="toto"/>
   <determinator name="vdfvgd" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y" guid="zaza">
    <input match="all">
-    <timeCondition display_name="premiere condition test" operator="&gt;" value="21:39"/>
+    <timeCondition display_name="troisieme condition test" operator="&gt;" category="time" value="21:39"/>
    </input>
    <output>
     <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>

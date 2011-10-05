@@ -15,7 +15,7 @@ xPL_MessagePtr schedulerTickMessage = NULL;
 
 int timeStr2int (char *str)
 {
-/*	int i = 0;
+	int i = 0;
 	int h = 0, m = 0, *t;
 	unsigned int c = 0;
 	
@@ -28,44 +28,44 @@ int timeStr2int (char *str)
 		else
 			*t = *t * 10 + c;
 	}
-	return h*60+m;*/
-	return (str[0]-0x30)*600+(str[1]-0x30)*60+(str[3]-0x30)*10+(str[4]-0x30);
+	return h*60+m;
+//	return (str[0]-0x30)*600+(str[1]-0x30)*60+(str[3]-0x30)*10+(str[4]-0x30);
 }
 
 int dateStr2int( char *str)
 {
 	struct tm ts;
 	char *r;
-printf("Date to convert : %s\n",str);
+//printf("Date to convert : %s\n",str);
 	r = strptime(str, "%d %b %Y", &ts);
-	printf("testing format \"%%d %%b %%Y\" r=[%s]\n",r?r:"NULL");
+//	printf("testing format \"%%d %%b %%Y\" r=[%s]\n",r?r:"NULL");
 	if ( r == NULL || *r !='\0')
 	{
 		r = strptime(str, "%Y %m %d", &ts);
-		printf("testing format \"%%Y %%m %%d\" r=[%s]\n",r?r:"NULL");
+//		printf("testing format \"%%Y %%m %%d\" r=[%s]\n",r?r:"NULL");
 	}
 	if ( r == NULL || *r !='\0')
 	{
 		r = strptime(str, "%d-%m-%Y", &ts);
-		printf("testing format \"%%d-%%B-%%Y\" r=[%s]\n",r?r:"NULL");
+//		printf("testing format \"%%d-%%B-%%Y\" r=[%s]\n",r?r:"NULL");
 	}
 	if ( r == NULL || *r !='\0')
 	{
 		r = strptime(str, "%b %d %Y", &ts);
-		printf("testing format \"%%b %%d %%Y\" r=[%s]\n",r?r:"NULL");
+//		printf("testing format \"%%b %%d %%Y\" r=[%s]\n",r?r:"NULL");
 	}
 	if ( r == NULL || *r !='\0')
 	{
 		r = strptime(str, "%b %d, %Y", &ts);
-		printf("testing format \"%%b %%d, %%Y\" r=[%s]\n",r?r:"NULL");
+//		printf("testing format \"%%b %%d, %%Y\" r=[%s]\n",r?r:"NULL");
 	}
 	if ( r == NULL || *r !='\0')
 	{
 		r = strptime(str, timerConfig.userDateFormat, &ts);
-		printf("testing user date format (\"%s\") r=[%s]\n", timerConfig.userDateFormat,r?r:"NULL");
+//		printf("testing user date format (\"%s\") r=[%s]\n", timerConfig.userDateFormat,r?r:"NULL");
 	}
 	 
-	printf("Y=%d, m=%d, d=%d\n", ts.tm_year,ts.tm_mon,ts.tm_mday);
+//	printf("Y=%d, m=%d, d=%d\n", ts.tm_year,ts.tm_mon,ts.tm_mday);
 
 	return (ts.tm_year+1900)*10000+(ts.tm_mon+1)*100+ts.tm_mday;
 }
@@ -105,10 +105,33 @@ int monthStr2int ( char *str)
 	return value;
 	
 }
-void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+
+int compareClockCondition(int v1, char *op, int v2)
+{
+	int result;
+
+	result = v2 - v1;
+
+	if  ( op[0] == '!' && op[1] == '=' && result == 0 )
+		return 0;
+	if  ( ( op[0] == '=' || op[1] == '=' ) && result == 0 )
+		return 1;
+	if ( ( (op[0]=='&' && op[1]=='g') || (op[1]=='&' && op[2]=='g') || op[0] == '>' ) && result < 0 )
+		return 1;
+	if ( ( (op[0]=='&' && op[1]=='l') || (op[1]=='&' && op[2]=='l') || op[0] == '<' ) && result > 0 )
+		return 1;
+
+	return 0;
+
+}
+
+
+void _internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 {
     node_t **tCondLst;
+    node_t **determLst;
     int nbCondLst;
+    int nbDetermLst;
 	char ct[10], op[32], va[80];
 	int sz_ct, sz_op, sz_va;
 
@@ -164,6 +187,14 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 			
 			for ( i=0; i<nbCondLst; i++)
 			{
+				// Recherche du determinator parent
+				determLst = roxml_xpath ( tCondLst[i], "ancestor-or-self::determinator", &nbDetermLst);
+				
+				char zazaza[80];
+				int sz_zazaza;
+				roxml_get_content ( roxml_get_attr (*determLst, "description", 1), zazaza, 80, &sz_zazaza );
+				printf("Determinator : %s\n", zazaza);
+				
 				//char *ct=roxml_get_attr (tCondLst[i], "category", 0);
 				roxml_get_content ( roxml_get_attr (tCondLst[i], "category", 0), ct, 80, &sz_ct );
 				//char *op=roxml_get_attr (tCondLst[i], "operator", 0);
@@ -172,35 +203,47 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 				roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
 				
 				int value;
+				int ret;
 				
 				if (strcasecmp(ct,"time") == 0 )
 				{
 					tickValue = tickTime;
 					value = timeStr2int(va);
+					ret = compareClockCondition(tickTime, op, timeStr2int(va));
 				}
 				else if (strcasecmp(ct,"date") == 0 )
 				{
 					tickValue = tickDate;
 					value = dateStr2int(va);
+					ret = compareClockCondition(tickDate, op, dateStr2int(va));
 				}
 				else if (strcasecmp(ct,"day") == 0 )
 				{
-				printf("Date condition :\n");
 					tickValue = tickDay;
 					value = atoi(va);
+					ret = compareClockCondition(tickDay, op, atoi(va));
 				}
 				else if (strcasecmp(ct,"month") == 0 )
 				{
 					tickValue = tickMonth;
 					value = monthStr2int(va);
+					ret = compareClockCondition(tickMonth, op, monthStr2int(va));
 				}
 				else if (strcasecmp(ct,"year") == 0 )
 				{
 					tickValue = tickYear;
 					value = atoi(va);
+					ret = compareClockCondition(tickYear, op, atoi(va));
 				}
 				
-				printf("ct=%s va=%s tickvalue=%d op=%s value=%d\n",ct, va, tickValue, op, value); 
+				if ( ret )
+				// La rêgle est vérifiée....
+				{
+					//...
+				}
+				
+				
+				printf("ct=%s va=%s tickvalue=%d op=%s value=%d -> %s\n",ct, va, tickValue, op, value, ret?"OK !!!":"NOK"); 
 				
 			}
 			
@@ -209,13 +252,6 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 
 }
 
-void clockServiceHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
-{
-    printf ( "Received a Clock Message from %s-%s.%s of type %d for %s.%s\n",
-    xPL_getSourceVendor (theMessage), xPL_getSourceDeviceID (theMessage), xPL_getSourceInstanceID (theMessage),
-    xPL_getMessageType (theMessage), xPL_getSchemaClass (theMessage), xPL_getSchemaType (theMessage));
-    
-}
 
 char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
 {
@@ -270,6 +306,113 @@ int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, in
 	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName, opt);
 	
 	return atoi(attr);
+}
+
+
+void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+{
+    node_t **tCondLst;
+    node_t **determLst;
+    int nbCondLst;
+    int nbDetermLst;
+	char ct[10], op[32], va[80];
+	int sz_ct, sz_op, sz_va;
+	int anyRule;
+
+	char *sourceVendor, *sourceDeviceID, *sourceInstanceID, *schemaClass, *schemaType;
+	xPL_MessageType messgeType;	
+	
+	char *timeStr;
+	int tickMonth, tickDate, tickDay, tickYear, tickTime;
+	int tickValue = 0;
+
+	int i, j;
+	char *tmp;	
+	
+	sourceVendor = xPL_getSourceVendor (theMessage);
+	sourceDeviceID = xPL_getSourceDeviceID (theMessage);
+	sourceInstanceID = xPL_getSourceInstanceID (theMessage);
+	messgeType = xPL_getMessageType (theMessage);
+	schemaClass = xPL_getSchemaClass (theMessage);
+	schemaType = xPL_getSchemaType (theMessage);
+
+	printf ( "Received a Message from %s-%s.%s of type %d for %s.%s\n",
+										sourceVendor, sourceDeviceID, sourceInstanceID, messgeType, schemaClass, schemaType);
+	
+	if ( strcmp(schemaClass, "internal") == 0)
+	{
+		if ( strcmp(schemaType, "tick") == 0 )
+		{
+			timeStr = xPL_getMessageNamedValue(theMessage, "time");
+/*			int timeMinutes = timeStr2int( timeStr );*/
+			tickMonth = atoi (xPL_getMessageNamedValue(theMessage, "month"));
+			tickDate  = atoi (xPL_getMessageNamedValue(theMessage, "date"));
+			tickDay   = atoi (xPL_getMessageNamedValue(theMessage, "day"));
+			tickYear  = atoi (xPL_getMessageNamedValue(theMessage, "year"));
+			tickTime  = timeStr2int( xPL_getMessageNamedValue(theMessage, "time") );
+			
+			tickValue = 0;
+			
+			
+			printf("heure %s => %d\n", timeStr, tickTime);
+			printf("tickMonth=%d tickDate=%d tickDay=%d tickYear=%d tickTime=%d\n", tickMonth, tickDate, tickDay, tickYear, tickTime );
+
+			/* On recherche tous les determinators contenant des conditions de temps */
+			determLst = roxml_xpath ( rootConfig, "//timeCondition/ancestor-or-self::determinator", &nbDetermLst);
+
+			for ( i=0; i<nbDetermLst; i++)
+			{
+				int ret = 0;
+				
+				/* Type de gestion des rêgles */
+				char *rule=xmlGetAttribut (determLst[i], "input", "match", FALSE);
+				anyRule = ! strcasecmp(rule,"any");
+				
+				/* Liste des conditions */
+				tCondLst = roxml_xpath ( determLst[i], "descendant-or-self::timeCondition", &nbCondLst);
+				printf("%d timeConditions trouvées\n",nbCondLst);
+			fflush(stdout);
+				for ( j=0; i<nbCondLst; j++)
+				{
+printf("*");				
+					/* On recupere les elements de la regle */
+					roxml_get_content ( roxml_get_attr (tCondLst[j], "category", 0), ct, 80, &sz_ct );
+					roxml_get_content ( roxml_get_attr (tCondLst[j], "operator", 0), op, 80, &sz_op );
+					roxml_get_content ( roxml_get_attr (tCondLst[j], "value", 0), va, 80, &sz_va );
+
+					/* Comparaison des elements en fonction du type */
+					if (strcasecmp(ct,"time") == 0 )
+						ret = compareClockCondition(tickTime, op, timeStr2int(va));
+					else if (strcasecmp(ct,"date") == 0 )
+						ret = compareClockCondition(tickDate, op, dateStr2int(va));
+					else if (strcasecmp(ct,"day") == 0 )
+						ret = compareClockCondition(tickDay, op, atoi(va));
+					else if (strcasecmp(ct,"month") == 0 )
+						ret = compareClockCondition(tickMonth, op, monthStr2int(va));
+					else if (strcasecmp(ct,"year") == 0 )
+						ret = compareClockCondition(tickYear, op, atoi(va));
+			
+					if ( ret && anyRule )
+						break;
+					if ( !ret && !anyRule )
+						break;
+				}
+				
+				if ( ret ) 
+					printf ("Le derterminator doit être executé\n");
+			}
+		}
+	}
+
+}
+
+
+void clockServiceHandler (xPL_ServicePtr theService, xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
+{
+    printf ( "Received a Clock Message from %s-%s.%s of type %d for %s.%s\n",
+    xPL_getSourceVendor (theMessage), xPL_getSourceDeviceID (theMessage), xPL_getSourceInstanceID (theMessage),
+    xPL_getMessageType (theMessage), xPL_getSchemaClass (theMessage), xPL_getSchemaType (theMessage));
+    
 }
 
 twilight_t getTWtypeFromStr (char * str)

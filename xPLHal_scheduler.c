@@ -36,18 +36,31 @@ int dateStr2int( char *str)
 {
 	struct tm ts;
 	char *r;
-
+printf("Date to convert : %s\n",str);
 	r = strptime(str, "%d %b %Y", &ts);
+	printf("testing format \"%%d %%b %%Y\" r=[%s]\n",r?r:"NULL");
 	if ( r == NULL || *r !='\0')
+	{
 		r = strptime(str, "%Y %m %d", &ts);
+		printf("testing format \"%%Y %%m %%d\" r=[%s]\n",r?r:"NULL");
+	}
 	if ( r == NULL || *r !='\0')
-		r = strptime(str, "d %B %Y", &ts);
+	{
+		r = strptime(str, "%d %B %Y", &ts);
+		printf("testing format \"%%d %%B %%Y\" r=[%s]\n",r?r:"NULL");
+	}
 	if ( r == NULL || *r !='\0')
-		r = strptime(str, "b %d %Y", &ts);
+	{
+		r = strptime(str, "%b %d %Y", &ts);
+		printf("testing format \"%%b %%d %%Y\" r=[%s]\n",r?r:"NULL");
+	}
 	if ( r == NULL || *r !='\0')
-		r = strptime(str, "b %B %Y", &ts);
+	{
+		r = strptime(str, "%b %B %Y", &ts);
+		printf("testing format \"%%b %%B %%Y\" r=[%s]\n",r?r:"NULL");
+	}
 	 
-	
+	printf("Y=%d, m=%d, d=%d\n", ts.tm_year,ts.tm_mon,ts.tm_mday);
 
 	return ts.tm_year*10000+ts.tm_mon*100+ts.tm_mday;
 }
@@ -167,6 +180,7 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 				}
 				else if (strcasecmp(ct,"day") == 0 )
 				{
+				printf("Date condition :\n");
 					tickValue = tickDay;
 					value = atoi(va);
 				}

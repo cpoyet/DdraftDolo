@@ -16,7 +16,24 @@
  </clocking>
  <user dateFormat="%d/%m/%Y"/>
  <determinators>
-  <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="premier determinator" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
+  <determinator guid="ttcdt" name="toutes conditions" description="" IsGroup="N" enabled="Y">
+    <input match="all">
+      <xplCondition display_name="1 xPL message" msg_type="trig" source_vendor="*" source_device="*" source_instance="*" target_vendor="*" target_device="*" target_instance="*" schema_class="test" schema_type="basic">
+        <param name="champ2 !" operator="=" value="2" />
+        <param name="champ3" operator="=" value="2" />
+      </xplCondition>
+      <globalCondition display_name="2 compare global variable" name="XPLHAL.MODE" operator="&lt;" value="2" />
+      <globalChanged display_name="3 global variable changed" name="xplhal.mode" />
+      <dayCondition display_name="4 execute days" dow="0111110" />
+      <timeCondition display_name="5 Compare Datetime" category="time" operator="&lt;" value="23:22" />
+    </input>
+    <output>
+      <xplAction executeOrder="New Action" display_name="New Action" msg_type="trig" msg_target="*" msg_schema="test.basic">
+        <xplActionParam expression="champ=valeur" />
+      </xplAction>
+    </output>
+  </determinator>
+ <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="premier determinator" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
    <input match="any">
     <timeCondition display_name="premiere condition test" operator="&gt;" category="time" value="21:39"/>
    </input>

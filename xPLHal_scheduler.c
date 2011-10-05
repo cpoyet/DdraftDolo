@@ -308,20 +308,61 @@ int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, in
 	return atoi(attr);
 }
 
+int testTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYear, int tickMonth, int tickDay, int tickTime)
+{
+    node_t **tCondLst;
+    int nbCondLst;
+	char ct[10], op[32], va[80];
+	int sz_ct, sz_op, sz_va;
+	int i;
+	int ret=0;
+
+	
+	/* Liste des conditions */
+	tCondLst = roxml_xpath ( detNode, "descendant-or-self::timeCondition", &nbCondLst);
+	printf("%d timeConditions trouvées\n",nbCondLst);
+
+	for ( i=0; i<nbCondLst; i++)
+	{				
+		/* On recupere les elements de la regle */
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "category", 0), ct, 10, &sz_ct );
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "operator", 0), op, 32, &sz_op );
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
+
+		/* Comparaison des elements en fonction du type */
+		if (strcasecmp(ct,"time") == 0 )
+			ret = compareClockCondition(tickTime, op, timeStr2int(va));
+		else if (strcasecmp(ct,"date") == 0 )
+			ret = compareClockCondition(tickDate, op, dateStr2int(va));
+		else if (strcasecmp(ct,"day") == 0 )
+			ret = compareClockCondition(tickDay, op, atoi(va));
+		else if (strcasecmp(ct,"month") == 0 )
+			ret = compareClockCondition(tickMonth, op, monthStr2int(va));
+		else if (strcasecmp(ct,"year") == 0 )
+			ret = compareClockCondition(tickYear, op, atoi(va));
+
+		char dn[80]; int sz_dn;
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "display_name", 0), dn, 80, &sz_dn );
+		printf("%s -> %s\n", dn, ret?"OK":"NOK");
+		
+		/* Sorite de la boucle dès qu'une condition est fausse */
+		if ( ret && anyRule )
+			return ret;
+		if ( !ret && !anyRule )
+			return ret;
+	}
+	
+	return ret;
+}
 
 void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 {
-    node_t **tCondLst;
     node_t **determLst;
-    int nbCondLst;
     int nbDetermLst;
-	char ct[10], op[32], va[80];
-	int sz_ct, sz_op, sz_va;
-	int anyRule;
 
 	char *sourceVendor, *sourceDeviceID, *sourceInstanceID, *schemaClass, *schemaType;
 	xPL_MessageType messgeType;	
-	
+	int anyRule;
 	char *timeStr;
 	int tickMonth, tickDate, tickDay, tickYear, tickTime;
 	int tickValue = 0;
@@ -345,10 +386,10 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 		{
 			timeStr = xPL_getMessageNamedValue(theMessage, "time");
 /*			int timeMinutes = timeStr2int( timeStr );*/
-			tickMonth = atoi (xPL_getMessageNamedValue(theMessage, "month"));
 			tickDate  = atoi (xPL_getMessageNamedValue(theMessage, "date"));
-			tickDay   = atoi (xPL_getMessageNamedValue(theMessage, "day"));
 			tickYear  = atoi (xPL_getMessageNamedValue(theMessage, "year"));
+			tickMonth = atoi (xPL_getMessageNamedValue(theMessage, "month"));
+			tickDay   = atoi (xPL_getMessageNamedValue(theMessage, "day"));
 			tickTime  = timeStr2int( xPL_getMessageNamedValue(theMessage, "time") );
 			
 			tickValue = 0;
@@ -362,41 +403,14 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 
 			for ( i=0; i<nbDetermLst; i++)
 			{
-				int ret = 0;
+				int ret;
 				
 				/* Type de gestion des rêgles */
 				char *rule=xmlGetAttribut (determLst[i], "input", "match", FALSE);
 				anyRule = ! strcasecmp(rule,"any");
-				
-				/* Liste des conditions */
-				tCondLst = roxml_xpath ( determLst[i], "descendant-or-self::timeCondition", &nbCondLst);
-				printf("%d timeConditions trouvées\n",nbCondLst);
-			fflush(stdout);
-				for ( j=0; i<nbCondLst; j++)
-				{
-printf("*");				
-					/* On recupere les elements de la regle */
-					roxml_get_content ( roxml_get_attr (tCondLst[j], "category", 0), ct, 80, &sz_ct );
-					roxml_get_content ( roxml_get_attr (tCondLst[j], "operator", 0), op, 80, &sz_op );
-					roxml_get_content ( roxml_get_attr (tCondLst[j], "value", 0), va, 80, &sz_va );
 
-					/* Comparaison des elements en fonction du type */
-					if (strcasecmp(ct,"time") == 0 )
-						ret = compareClockCondition(tickTime, op, timeStr2int(va));
-					else if (strcasecmp(ct,"date") == 0 )
-						ret = compareClockCondition(tickDate, op, dateStr2int(va));
-					else if (strcasecmp(ct,"day") == 0 )
-						ret = compareClockCondition(tickDay, op, atoi(va));
-					else if (strcasecmp(ct,"month") == 0 )
-						ret = compareClockCondition(tickMonth, op, monthStr2int(va));
-					else if (strcasecmp(ct,"year") == 0 )
-						ret = compareClockCondition(tickYear, op, atoi(va));
-			
-					if ( ret && anyRule )
-						break;
-					if ( !ret && !anyRule )
-						break;
-				}
+				ret = testTimeConditions( determLst[i], anyRule, tickDate, tickYear, tickMonth, tickDay, tickTime);
+				
 				
 				if ( ret ) 
 					printf ("Le derterminator doit être executé\n");

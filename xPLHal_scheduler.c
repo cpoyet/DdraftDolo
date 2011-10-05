@@ -46,8 +46,8 @@ printf("Date to convert : %s\n",str);
 	}
 	if ( r == NULL || *r !='\0')
 	{
-		r = strptime(str, "%d %B %Y", &ts);
-		printf("testing format \"%%d %%B %%Y\" r=[%s]\n",r?r:"NULL");
+		r = strptime(str, "%d-%m-%Y", &ts);
+		printf("testing format \"%%d-%%B-%%Y\" r=[%s]\n",r?r:"NULL");
 	}
 	if ( r == NULL || *r !='\0')
 	{
@@ -56,13 +56,18 @@ printf("Date to convert : %s\n",str);
 	}
 	if ( r == NULL || *r !='\0')
 	{
-		r = strptime(str, "%b %B %Y", &ts);
-		printf("testing format \"%%b %%B %%Y\" r=[%s]\n",r?r:"NULL");
+		r = strptime(str, "%b %d, %Y", &ts);
+		printf("testing format \"%%b %%d, %%Y\" r=[%s]\n",r?r:"NULL");
+	}
+	if ( r == NULL || *r !='\0')
+	{
+		r = strptime(str, timerConfig.userDateFormat, &ts);
+		printf("testing user date format (\"%s\") r=[%s]\n", timerConfig.userDateFormat,r?r:"NULL");
 	}
 	 
 	printf("Y=%d, m=%d, d=%d\n", ts.tm_year,ts.tm_mon,ts.tm_mday);
 
-	return ts.tm_year*10000+ts.tm_mon*100+ts.tm_mday;
+	return (ts.tm_year+1900)*10000+(ts.tm_mon+1)*100+ts.tm_mday;
 }
 
 int monthStr2int ( char *str)
@@ -309,8 +314,11 @@ int timer_loadConfig (node_t *argXmlConfig )
 	timerConfig.dawn_type = getTWtypeFromStr ( xmlGetAttribut(argXmlConfig, "//clocking/twilight/dawn", "type", 1) );
 	timerConfig.dusk_enabled = xmlGetBoolAttribut (argXmlConfig, "//clocking/twilight/dusk", "enabled", 1);
 	timerConfig.dusk_type = getTWtypeFromStr ( xmlGetAttribut(argXmlConfig, "//clocking/twilight/dusk", "type", 1) );
-		
-    printf ("*clock_enabled = %d\n", timerConfig.clock_enabled);
+
+	/* User date format */
+	timerConfig.userDateFormat = strdup( xmlGetAttribut(argXmlConfig, "//user", "dateFormat", 1) );
+
+	printf ("*clock_enabled = %d\n", timerConfig.clock_enabled);
     printf ("*delay = %d\n", timerConfig.sched_interval);
     
 	printf (" timerConfig.dusk_type = %s\n", TWtypeToStr (timerConfig.dusk_type) );

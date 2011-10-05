@@ -33,6 +33,7 @@ typedef struct _TIMER_CONFIG
 		twilight_t dawn_type;
 		int dusk_enabled;
 		twilight_t dusk_type;
+		char *userDateFormat;
 	} TIMER_CONFIG;
 
 /* Prototypes ********************************************************************/

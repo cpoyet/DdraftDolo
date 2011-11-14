@@ -21,6 +21,10 @@
 #define MAX_CMD_ARGS		(16)
 #define MAX_REQ_LINE		(1024)
 
+#define XHCP_EXE_SUCCESS 0
+#define XHCP_EXE_ERROR 0
+#define XHCP_EXE_ARGS 1
+#define XHCP_EXE_DISCON -1
 
 /* Macros ********************************************************/
 

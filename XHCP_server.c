@@ -295,7 +295,7 @@ int exec_Line (int conn, int argc, char **argv)
     if ( cmd->id == END_CMD )
     {
         XHCP_printXHCPResponse (conn, RES_COMNOTREC );  // 500 Command not recognised
-        retValue = 1;
+        //retValue = 1;
     }
     else
     {
@@ -303,7 +303,7 @@ int exec_Line (int conn, int argc, char **argv)
         {
             /*XHCP_printXHCPResponse(conn, RES_INTNERROR );  // 503 Internal error - command not performed ----- Pour l'instant !!!*/
             XHCP_printMessage (conn, 500, "Command not implemented" );
-            retValue = 1;
+            //retValue = 1;
         }
         else
             retValue = cmd->fnct (conn, argc, argv);
@@ -563,7 +563,7 @@ int XHCP_server (node_t* argXmlConfig)
 
 int XHCPcmd_QUIT (int sockd, int argc, char **argv)
 {
-    return -1;
+    return XHCP_EXE_DISCON;
 }
 
 int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
@@ -572,7 +572,7 @@ int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
     
     XHCP_printMessage (sockd, 221, "Shuting down in progress ... Good night... !!" );
     
-    return -1;
+    return XHCP_EXE_DISCON;
 }
 
 int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
@@ -589,7 +589,7 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
         else
         {
             XHCP_printXHCPResponse (sockd, RES_SYNTAXERR );  // Syntax error
-            return 1;
+            return XHCP_EXE_ERROR;
         }
     }
     
@@ -599,7 +599,7 @@ int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)
         XHCP_print (sockd, "." );
     
     
-    return 0;
+    return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_PUTCONFIGXML_handle (int sockd, int argc, char **argv, char *data)
@@ -609,7 +609,7 @@ int XHCPcmd_PUTCONFIGXML_handle (int sockd, int argc, char **argv, char *data)
     if ( (tmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
-        return -1;
+        return XHCP_EXE_ERROR;
     }
     
     printf ("Chargement XML OK\n");
@@ -623,7 +623,7 @@ int XHCPcmd_PUTCONFIGXML_handle (int sockd, int argc, char **argv, char *data)
     
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
     
-    return 0;
+    return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_PUTCONFIGXML (int sockd, int argc, char **argv)
@@ -632,7 +632,7 @@ int XHCPcmd_PUTCONFIGXML (int sockd, int argc, char **argv)
     
     XHCP_setAdditionalDataHandler (XHCPcmd_PUTCONFIGXML_handle);
     
-    return 1;
+    return XHCP_EXE_ARGS;
 }
 
 int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
@@ -657,7 +657,7 @@ int XHCPcmd_LISTRULES (int sockd, int argc, char **argv)
     }
     
     XHCP_print (sockd, ".");
-    return 0;
+    return XHCP_EXE_SUCCESS;
 }
 
 
@@ -674,7 +674,7 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     if (argc != 2)
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR ); // Syntax Error
-        return 1;
+        return XHCP_EXE_ERROR;
     }
     
     sprintf (buffer, "//determinator[@guid='%s']", argv[1]);
@@ -697,7 +697,7 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     
     
     
-    return 0;
+    return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
@@ -711,16 +711,16 @@ int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
     char *zaza = NULL;
 
     printf ("Entree XHCPcmd_SETRULE_handle avec %d arguments\n", argc);
-                   int i;
-                    for ( i=0; i<argc; i++ )
-                        printf ( "%d - %s\n", i, argv[i]);
- 
+    int i;
+	for ( i=0; i<argc; i++ )
+		printf ( "%d - %s\n", i, argv[i]);
+
 
 
     if ( (nTmp = roxml_load_buf (data)) == NULL )
     {
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
-        return 0;
+        return XHCP_EXE_ERROR;
     }
     
     printf ("Chargement XML OK\n");
@@ -752,7 +752,7 @@ printf("a la fin id = %s\n",newId==NULL ? "NULL":newId);
     {
 printf("Pas trouve //derterminator, nb=%d\n",nb);
         XHCP_printXHCPResponse (sockd, RES_SYNTAXERR); // Syntax Error
-        return 0;
+        return XHCP_EXE_ERROR;
     }
 	
 	// Ajout d'un nouveau noeud
@@ -772,7 +772,7 @@ free(zaza);
     {
 printf("Pas trouve //determinators, nb=%d\n",nb);
         XHCP_printXHCPResponse (sockd, RES_INTNERROR); // Internal error
-        return 0;
+        return XHCP_EXE_ERROR;
     }
 
 	/* On ratache le nouveau determinator à la liste */
@@ -791,7 +791,7 @@ printf("Pas trouve //determinators, nb=%d\n",nb);
 
     XHCP_printXHCPResponse (sockd, RES_CFGDOCUPL ); // Configuration document uploaded
     
-    return 0;
+    return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_SETRULE (int sockd, int argc, char **argv)
@@ -800,7 +800,7 @@ int XHCPcmd_SETRULE (int sockd, int argc, char **argv)
     
     XHCP_setAdditionalDataHandler (XHCPcmd_SETRULE_handle);
     
-    return 1;
+    return XHCP_EXE_ARGS;
 }
 
 int XHCPcmd_GETCONFIGXML (int sockd, int argc, char **argv)
@@ -816,6 +816,6 @@ int XHCPcmd_GETCONFIGXML (int sockd, int argc, char **argv)
 	
 	free (writeBuffer);
 
-    return 0;
+    return XHCP_EXE_SUCCESS;
 }
 

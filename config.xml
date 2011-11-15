@@ -44,8 +44,8 @@
   <determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="test_time" description="Determinator de test de conversion des formats de date" groupName="" IsGroup="N" enabled="N">
    <input match="all">
     <timeCondition display_name="Format %d %b %Y" operator="&gt;" category="date" value="3oct2011"/>
-    <timeCondition display_name="Format %d %b %Y francais" operator="&lt;" category="date" value="3fev2011"/>
-    <timeCondition display_name="Format %d %b %Y anglais"  operator="&lt;" category="date" value="3feb2011"/>
+    <timeCondition display_name="Format %d %b %Y francais" operator="&lt;" category="date" value="3fev2012"/>
+    <timeCondition display_name="Format %d %b %Y anglais"  operator="&lt;" category="date" value="3feb2012"/>
     <timeCondition display_name="Format %d %B %Y francais" operator="&lt;" category="date" value="3octobre2011"/>
     <timeCondition display_name="Format %d %B %Y anglais"  operator="&lt;" category="date" value="3october2011"/>
     <timeCondition display_name="Format %Y %m %d" operator="&gt;=" category="date" value="2011100="/>

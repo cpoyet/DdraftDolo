@@ -106,7 +106,7 @@ int monthStr2int ( char *str)
 	
 }
 
-int compareClockCondition(int v1, char *op, int v2)
+int compareClockStrings(int v1, char *op, int v2)
 {
 	int result;
 
@@ -180,7 +180,7 @@ int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, in
 	return atoi(attr);
 }
 
-int testTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYear, int tickMonth, int tickDay, int tickTime)
+int verifTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYear, int tickMonth, int tickDay, int tickTime)
 {
     node_t **tCondLst;
     int nbCondLst;
@@ -203,15 +203,15 @@ int testTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYea
 
 		/* Comparaison des elements en fonction du type */
 		if (strcasecmp(ct,"time") == 0 )
-			ret = compareClockCondition(tickTime, op, timeStr2int(va));
+			ret = compareClockStrings(tickTime, op, timeStr2int(va));
 		else if (strcasecmp(ct,"date") == 0 )
-			ret = compareClockCondition(tickDate, op, dateStr2int(va));
+			ret = compareClockStrings(tickDate, op, dateStr2int(va));
 		else if (strcasecmp(ct,"day") == 0 )
-			ret = compareClockCondition(tickDay, op, atoi(va));
+			ret = compareClockStrings(tickDay, op, atoi(va));
 		else if (strcasecmp(ct,"month") == 0 )
-			ret = compareClockCondition(tickMonth, op, monthStr2int(va));
+			ret = compareClockStrings(tickMonth, op, monthStr2int(va));
 		else if (strcasecmp(ct,"year") == 0 )
-			ret = compareClockCondition(tickYear, op, atoi(va));
+			ret = compareClockStrings(tickYear, op, atoi(va));
 
 		char dn[80]; int sz_dn;
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "display_name", 0), dn, 80, &sz_dn );
@@ -227,12 +227,12 @@ int testTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYea
 	return ret;
 }
 
-int executeDetActions(node_t *detNode)
+int executeActions(node_t *detNode)
 {
 	return 0;
 }
 
-int testAllConditions(node_t *detNode, int type_event)
+int verifAllConditions(node_t *detNode, int type_event)
 {
 	return 0;
 }
@@ -246,7 +246,7 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 	xPL_MessageType messgeType;	
 	int anyRule;
 	char *timeStr;
-	int tickMonth, tickDate, tickDay, tickYear, tickTime;
+	int tickMonth, tickDate, tickDay, tickYear, tickTime, epoch;
 	int tickValue = 0;
 
 	int i, j;
@@ -276,9 +276,10 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 			
 			tickValue = 0;
 			
+			epoch   = atoi (xPL_getMessageNamedValue(theMessage, "epoch"));
 			
 			printf("heure %s => %d\n", timeStr, tickTime);
-			printf("tickMonth=%d tickDate=%d tickDay=%d tickYear=%d tickTime=%d\n", tickMonth, tickDate, tickDay, tickYear, tickTime );
+			printf("tickMonth=%d tickDate=%d tickDay=%d tickYear=%d tickTime=%d epoch=%d\n", tickMonth, tickDate, tickDay, tickYear, tickTime, epoch );
 
 			/* On recherche tous les determinators contenant des conditions de temps */
 			determLst = roxml_xpath ( rootConfig, "//timeCondition/ancestor-or-self::determinator", &nbDetermLst);
@@ -291,18 +292,18 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 				char *rule=xmlGetAttribut (determLst[i], "input", "match", FALSE);
 				anyRule = ! strcasecmp(rule,"any");
 
-				ret = testTimeConditions( determLst[i], anyRule, tickDate, tickYear, tickMonth, tickDay, tickTime);
+				ret = verifTimeConditions( determLst[i], anyRule, tickDate, tickYear, tickMonth, tickDay, tickTime);
 
 				if ( ret ) 
 				{
 					printf ("Le derterminator doit être executé\n");
 
 					if ( anyRule )
-						executeDetActions(determLst[i]);
+						executeActions(determLst[i]);
 					else
 					{
-						if (testAllConditions(determLst[i], /*TIME_EVENT*/ 0) )
-							executeDetActions(determLst[i]);
+						if (verifAllConditions(determLst[i], /*TIME_EVENT*/ 0) )
+							executeActions(determLst[i]);
 					}
 				}
 
@@ -467,6 +468,10 @@ int xpl4l_timer(node_t* argXmlConfig)
 		xPL_setMessageNamedValue(schedulerTickMessage, "date", buf);
 		strftime(buf, sizeof(buf), "%d", ts);
 		xPL_setMessageNamedValue(schedulerTickMessage, "day", buf);
+
+		sprintf(buf, "%d", t);
+		xPL_setMessageNamedValue(schedulerTickMessage, "epoch", buf);
+
 
 		
 		ret = xPL_dispatchMessageEvent(schedulerTickMessage);

@@ -6,27 +6,27 @@
 
 int stop = 0;
 
-int HAL4L_debugMode = 0;
+
+int HAL4L_levelTrace = 0;
 static char logMessageBuffer[256];
 
-/* Return if debug mode in use */
-int HAL4L_getDebug() {
-  return HAL4L_debugMode;
+
+int HAL4L_getLevelTrace() {
+  return HAL4L_levelTrace;
 }
 
-/* Set Debugging Mode */
-void HAL4L_setDebug(int isDebugging) {
-  HAL4L_debugMode = isDebugging;
+void HAL4L_setLevelTrace(int level) {
+  HAL4L_levelTrace = level;
 }
 
 /* Write a debug message out (if we are debugging) */
-void HAL4L_Debug(String theFormat, ...)
+void HAL4L_Debug(int level, String theFormat, ...)
 {
   va_list theParms;
   time_t rightNow;
   
   /* Skip if not a debug message */
-  if (!HAL4L_debugMode) return;
+  if (level>HAL4L_levelTrace) return;
 
   /* Get access to the variable parms */
   va_start(theParms, theFormat);
@@ -57,14 +57,14 @@ int getOptions ( int argc, char **argv)
     {
         {"config", 		1, NULL, 'c'},
         {"xhcpconfig", 	1, NULL, 'x'},
-        {"debug", 		0, NULL, 'd'},
+        {"debug", 		1, NULL, 'd'},
         {"help", 		0, NULL, 'h'},
         {0, 0, 0, 0}
     };
     
     while (1)
     {
-        c = getopt_long (argc, argv, "x:c:hd", long_options, &option_index);
+        c = getopt_long (argc, argv, "x:c:hd:", long_options, &option_index);
         if (c == -1)
             break;
         
@@ -77,7 +77,8 @@ int getOptions ( int argc, char **argv)
                 XHCP_setConfigFile (optarg);
                 break;
             case 'd':
-                HAL4L_setDebug(1);
+			printf("Argument '%s'\n",optarg);
+                HAL4L_setLevelTrace(atoi(optarg));
                 break;
             case 'h':
                 printf ("option help\n");
@@ -95,7 +96,7 @@ int getOptions ( int argc, char **argv)
 
 int loadHal4lConfig (char *fileName)
 {
-    HAL4L_Debug ("Loading xPLHal4L server configuration...");
+    HAL4L_Debug (HAL4L_INFO,"Loading xPLHal4L server configuration...");
 	
 	if ( rootConfig != NULL )
 		 roxml_close (rootConfig);
@@ -220,7 +221,7 @@ int main (int argc, String argv[])
     
     if ( HAL4L_getConfigFile ()==NULL )
     {
-        HAL4L_Debug ("Loading default configuration file: config.xml");
+        HAL4L_Debug (HAL4L_INFO,"Loading default configuration file: config.xml");
         HAL4L_setConfigFile ("config.xml");
     }
     
@@ -240,7 +241,7 @@ int main (int argc, String argv[])
 		toto = XHCP_server (rootConfig);
 		if ( toto != oldToto )
 		{
-			HAL4L_Debug("Statut : %s", XHCPstate2String(toto));
+			HAL4L_Debug(HAL4L_DEBUG,"Statut : %s", XHCPstate2String(toto));
 			oldToto = toto;
 		}
 

@@ -37,7 +37,7 @@ int rules_executeActions(node_t *detNode)
 
 	/* Liste des actions */
 	tActLst = roxml_xpath ( detNode, "output/*", &nbActLst);
-	HAL4L_Debug("rules_executeActions : %d actions trouvées",nbActLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_executeActions : %d actions trouvées",nbActLst);
 	
 	
 	qsort (tActLst, nbActLst, sizeof(node_t *), sortOrderAction);
@@ -122,7 +122,7 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 	
 	/* Liste des conditions */
 	tCondLst = roxml_xpath ( detNode, "descendant-or-self::timeCondition", &nbCondLst);
-	HAL4L_Debug("rules_verifTimeConditions : %d timeConditions trouvées",nbCondLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %d timeConditions trouvées",nbCondLst);
 
 	for ( i=0; i<nbCondLst; i++)
 	{				
@@ -156,12 +156,12 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 			ret = compareClockStrings(tb->tm_year+1900, op, atoi(va));
 
 			
-		HAL4L_Debug("rules_verifTimeConditions : Via time_t : Date=%d Heure=%d",(tb->tm_year+1900)*10000+(tb->tm_mon+1)*100+tb->tm_mday, tb->tm_hour*60+tb->tm_min);
+		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : Via time_t : Date=%d Heure=%d",(tb->tm_year+1900)*10000+(tb->tm_mon+1)*100+tb->tm_mday, tb->tm_hour*60+tb->tm_min);
 
 		char dn[80]; int sz_dn;
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "display_name", 0), dn, 80, &sz_dn );
 		roxml_release (RELEASE_LAST);
-		HAL4L_Debug("rules_verifTimeConditions : %s -> %s", dn, ret?"OK":"NOK");
+		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %s -> %s", dn, ret?"OK":"NOK");
 		
 		/* Sorite de la boucle dès qu'une condition est fausse */
 		if ( ret && anyRule )

@@ -43,13 +43,20 @@
 #define HAL4L_setConfigFile(V) HAL4L_configFile=V
 #define HAL4L_getConfigFile() HAL4L_configFile
 
+/* Constantes ********************************************************************/
+#define HAL4L_DEBUG 4
+#define HAL4L_TRACE 3
+#define HAL4L_WARNING 2
+#define HAL4L_INFO 1
+#define HAL4L_NOTRACE 0
+
 /* Prototypes ********************************************************************/
 EXT_XPLHAL4L int saveHal4lConfig (char *);
 EXT_XPLHAL4L int loadHal4lConfig (char *);
 
 EXT_XPLHAL4L int  HAL4L_getDebug();
 EXT_XPLHAL4L void HAL4L_setDebug(int isDebugging);
-EXT_XPLHAL4L void HAL4L_Debug(String theFormat, ...);
+EXT_XPLHAL4L void HAL4L_Debug(int level, String theFormat, ...);
 
 
 /* Variables globales ************************************************************/

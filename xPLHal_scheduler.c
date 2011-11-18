@@ -4,6 +4,7 @@
 #define _XOPEN_SOURCE 
 
 #include "xPLHal_scheduler.h"
+#include "xPLHal_rules.h"
 #include "xPLHal4L.h"
 
 
@@ -106,24 +107,6 @@ int monthStr2int ( char *str)
 	
 }
 
-int compareClockCondition(int v1, char *op, int v2)
-{
-	int result;
-
-	result = v2 - v1;
-
-	if  ( op[0] == '!' && op[1] == '=' && result == 0 )
-		return 0;
-	if  ( ( op[0] == '=' || op[1] == '=' ) && result == 0 )
-		return 1;
-	if ( ( (op[0]=='&' && op[1]=='g') || (op[1]=='&' && op[2]=='g') || op[0] == '>' ) && result < 0 )
-		return 1;
-	if ( ( (op[0]=='&' && op[1]=='l') || (op[1]=='&' && op[2]=='l') || op[0] == '<' ) && result > 0 )
-		return 1;
-
-	return 0;
-
-}
 
 char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
 {
@@ -180,77 +163,58 @@ int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, in
 	return atoi(attr);
 }
 
-int testTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYear, int tickMonth, int tickDay, int tickTime)
+void timeEvent(time_t *time)
 {
-    node_t **tCondLst;
-    int nbCondLst;
-	char ct[10], op[32], va[80];
-	int sz_ct, sz_op, sz_va;
+
+    node_t **determLst;
+    int nbDetermLst;
+	int anyRule;
+
 	int i;
-	int ret=0;
 
 	
-	/* Liste des conditions */
-	tCondLst = roxml_xpath ( detNode, "descendant-or-self::timeCondition", &nbCondLst);
-	printf("%d timeConditions trouvées\n",nbCondLst);
+	/* On recherche tous les determinators contenant des conditions de temps */
+	determLst = roxml_xpath ( rootConfig, "//timeCondition/ancestor-or-self::determinator", &nbDetermLst);
 
-	for ( i=0; i<nbCondLst; i++)
-	{				
-		/* On recupere les elements de la regle */
-		roxml_get_content ( roxml_get_attr (tCondLst[i], "category", 0), ct, 10, &sz_ct );
-		roxml_get_content ( roxml_get_attr (tCondLst[i], "operator", 0), op, 32, &sz_op );
-		roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
-
-		/* Comparaison des elements en fonction du type */
-		if (strcasecmp(ct,"time") == 0 )
-			ret = compareClockCondition(tickTime, op, timeStr2int(va));
-		else if (strcasecmp(ct,"date") == 0 )
-			ret = compareClockCondition(tickDate, op, dateStr2int(va));
-		else if (strcasecmp(ct,"day") == 0 )
-			ret = compareClockCondition(tickDay, op, atoi(va));
-		else if (strcasecmp(ct,"month") == 0 )
-			ret = compareClockCondition(tickMonth, op, monthStr2int(va));
-		else if (strcasecmp(ct,"year") == 0 )
-			ret = compareClockCondition(tickYear, op, atoi(va));
-
-		char dn[80]; int sz_dn;
-		roxml_get_content ( roxml_get_attr (tCondLst[i], "display_name", 0), dn, 80, &sz_dn );
-		printf("%s -> %s\n", dn, ret?"OK":"NOK");
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		int ret;
 		
-		/* Sorite de la boucle dès qu'une condition est fausse */
-		if ( ret && anyRule )
-			return ret;
-		if ( !ret && !anyRule )
-			return ret;
+		/* Type de gestion des rêgles */
+		char *rule=xmlGetAttribut (determLst[i], "input", "match", FALSE);
+		anyRule = ! strcasecmp(rule,"any");
+
+		//ret = rules_verifTimeConditions( determLst[i], anyRule, tickDate, tickYear, tickMonth, tickDay, tickTime);
+		ret = rules_verifTimeConditions( determLst[i], anyRule, time);
+
+		if ( ret ) 
+		{
+			printf ("Le derterminator doit être executé\n");
+rules_executeActions(determLst[i]);
+			// if ( anyRule )
+				// rules_executeActions(determLst[i]);
+			// else
+			// {
+				// if (rules_verifAllConditions(determLst[i], /*TIME_EVENT*/ 0) )
+					// rules_executeActions(determLst[i]);
+			// }
+		 }
+
 	}
-
-	return ret;
-}
-
-int executeDetActions(node_t *detNode)
-{
-	return 0;
-}
-
-int testAllConditions(node_t *detNode, int type_event)
-{
-	return 0;
+	
 }
 
 void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 {
-    node_t **determLst;
-    int nbDetermLst;
 
 	char *sourceVendor, *sourceDeviceID, *sourceInstanceID, *schemaClass, *schemaType;
 	xPL_MessageType messgeType;	
-	int anyRule;
 	char *timeStr;
 	int tickMonth, tickDate, tickDay, tickYear, tickTime;
-	int tickValue = 0;
+	time_t epoch;
 
-	int i, j;
-	char *tmp;	
+
+
 
 	sourceVendor = xPL_getSourceVendor (theMessage);
 	sourceDeviceID = xPL_getSourceDeviceID (theMessage);
@@ -274,39 +238,14 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 			tickDay   = atoi (xPL_getMessageNamedValue(theMessage, "day"));
 			tickTime  = timeStr2int( xPL_getMessageNamedValue(theMessage, "time") );
 			
-			tickValue = 0;
 			
+			epoch   = atol (xPL_getMessageNamedValue(theMessage, "epoch"));
+			
+			timeEvent( &epoch);
 			
 			printf("heure %s => %d\n", timeStr, tickTime);
-			printf("tickMonth=%d tickDate=%d tickDay=%d tickYear=%d tickTime=%d\n", tickMonth, tickDate, tickDay, tickYear, tickTime );
+			printf("tickMonth=%d tickDate=%d tickDay=%d tickYear=%d tickTime=%d epoch=%d\n", tickMonth, tickDate, tickDay, tickYear, tickTime, epoch );
 
-			/* On recherche tous les determinators contenant des conditions de temps */
-			determLst = roxml_xpath ( rootConfig, "//timeCondition/ancestor-or-self::determinator", &nbDetermLst);
-
-			for ( i=0; i<nbDetermLst; i++)
-			{
-				int ret;
-				
-				/* Type de gestion des rêgles */
-				char *rule=xmlGetAttribut (determLst[i], "input", "match", FALSE);
-				anyRule = ! strcasecmp(rule,"any");
-
-				ret = testTimeConditions( determLst[i], anyRule, tickDate, tickYear, tickMonth, tickDay, tickTime);
-
-				if ( ret ) 
-				{
-					printf ("Le derterminator doit être executé\n");
-
-					if ( anyRule )
-						executeDetActions(determLst[i]);
-					else
-					{
-						if (testAllConditions(determLst[i], /*TIME_EVENT*/ 0) )
-							executeDetActions(determLst[i]);
-					}
-				}
-
-			}
 		}
 	}
 
@@ -467,6 +406,10 @@ int xpl4l_timer(node_t* argXmlConfig)
 		xPL_setMessageNamedValue(schedulerTickMessage, "date", buf);
 		strftime(buf, sizeof(buf), "%d", ts);
 		xPL_setMessageNamedValue(schedulerTickMessage, "day", buf);
+
+		sprintf(buf, "%d", t);
+		xPL_setMessageNamedValue(schedulerTickMessage, "epoch", buf);
+
 
 		
 		ret = xPL_dispatchMessageEvent(schedulerTickMessage);

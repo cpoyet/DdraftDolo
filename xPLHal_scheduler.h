@@ -40,6 +40,9 @@ typedef struct _TIMER_CONFIG
 EXT_XPLHAL_SCHEDULER int timer_loadConfig (node_t*);
 EXT_XPLHAL_SCHEDULER int xpl4l_timer(node_t* );
 
+EXT_XPLHAL_SCHEDULER int timeStr2int (char *str);
+EXT_XPLHAL_SCHEDULER int dateStr2int( char *str);
+EXT_XPLHAL_SCHEDULER int monthStr2int ( char *str);
 /* Variables globales ************************************************************/
 
 EXT_XPLHAL_SCHEDULER TIMER_CONFIG timerConfig;

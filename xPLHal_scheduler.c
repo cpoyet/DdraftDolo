@@ -202,9 +202,11 @@ int verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 	{				
 		/* On recupere les elements de la regle */
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "category", 0), ct, 10, &sz_ct );
+		//roxml_release (RELEASE_LAST);
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "operator", 0), op, 32, &sz_op );
+		//roxml_release (RELEASE_LAST);
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
-
+		//roxml_release (RELEASE_LAST);
 		/* Comparaison des elements en fonction du type */
 		/*if (strcasecmp(ct,"time") == 0 )
 			ret = compareClockStrings(tickTime, op, timeStr2int(va));
@@ -232,6 +234,7 @@ int verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 
 		char dn[80]; int sz_dn;
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "display_name", 0), dn, 80, &sz_dn );
+		roxml_release (RELEASE_LAST);
 		printf("%s -> %s\n", dn, ret?"OK":"NOK");
 		
 		/* Sorite de la boucle dès qu'une condition est fausse */
@@ -244,8 +247,60 @@ int verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 	return ret;
 }
 
+
+int sortOrderAction(void const *a, void const *b)
+{
+	char bufA[10],bufB[10];
+	int sz_bufA, sz_bufB;
+
+   node_t *nodeA = (node_t *)a;
+   node_t *nodeB = (node_t *)b;
+   
+   node_t *attrA = roxml_get_attr(nodeA, "executeOrder", 0);
+   node_t *attrB = roxml_get_attr(nodeB, "executeOrder", 0);
+   
+   roxml_get_content ( attrA, bufA, 9, &sz_bufA );
+   roxml_release (RELEASE_LAST);
+   roxml_get_content ( attrB, bufB, 9, &sz_bufB );
+   roxml_release (RELEASE_LAST);
+   
+   int orderA = atoi(bufA);
+   int orderB = atoi(bufB);
+   
+   return orderA - orderB;
+}
+
 int executeActions(node_t *detNode)
 {
+
+    node_t **tActLst;
+    int nbActLst;
+	
+	int i;
+
+	/* Liste des actions */
+	tActLst = roxml_xpath ( detNode, "output/*", &nbActLst);
+	printf("%d actions trouvées\n",nbActLst);
+	
+	
+	qsort (tActLst, nbActLst, sizeof(node_t *), sortOrderAction);
+
+	
+	for (i=0; i<nbActLst; i++)
+	{
+		printf("- %s\n",roxml_get_name	(	tActLst[i], NULL, 0));	
+	}
+
+// logAction
+// xplAction
+// globalAction
+// delayAction
+// stopAction
+// suspendAction
+// executeAction
+// execRuleAction
+// runScriptAction
+
 	return 0;
 }
 
@@ -281,15 +336,15 @@ void timeEvent(time_t *time)
 		if ( ret ) 
 		{
 			printf ("Le derterminator doit être executé\n");
-
-			if ( anyRule )
-				executeActions(determLst[i]);
-			else
-			{
-				if (verifAllConditions(determLst[i], /*TIME_EVENT*/ 0) )
-					executeActions(determLst[i]);
-			}
-		}
+executeActions(determLst[i]);
+			// if ( anyRule )
+				// executeActions(determLst[i]);
+			// else
+			// {
+				// if (verifAllConditions(determLst[i], /*TIME_EVENT*/ 0) )
+					// executeActions(determLst[i]);
+			// }
+		 }
 
 	}
 	

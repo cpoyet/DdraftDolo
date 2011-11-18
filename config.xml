@@ -28,10 +28,11 @@
       <timeCondition display_name="5 Compare Datetime" category="time" operator="&lt;" value="23:22" />
     </input>
     <output>
-      <xplAction executeOrder="New Action" display_name="New Action" msg_type="trig" msg_target="*" msg_schema="test.basic">
+      <xplAction executeOrder="0" display_name="New Action" msg_type="trig" msg_target="*" msg_schema="test.basic">
         <xplActionParam expression="champ=valeur" />
       </xplAction>
-    </output>
+     <globalAction executeOrder="1" display_name="action test" name="cache.bonjour" value="action"/>
+   </output>
   </determinator>
  <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="premier determinator" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
    <input match="any">
@@ -58,7 +59,8 @@
     <timeCondition display_name="annee uniquement" operator="=" category="year" value="2011"/>
    </input>
    <output>
-    <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>
+    <globalAction executeOrder="action test1" display_name="action test" name="cache.bonjour" value="action"/>
+    <globalAction executeOrder="action test2" display_name="action test" name="cache.bonjour" value="action"/>
    </output>
   </determinator>
   <determinator guid="test"/>

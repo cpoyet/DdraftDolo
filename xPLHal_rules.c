@@ -106,7 +106,6 @@ int sortOrderAction(void const *a, void const *b)
    return orderA - orderB;
 }
 
-//int verifTimeConditions ( node_t *detNode, int anyRule, int tickDate, int tickYear, int tickMonth, int tickDay, int tickTime)
 int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 {
     node_t **tCondLst;
@@ -128,22 +127,9 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 	{				
 		/* On recupere les elements de la regle */
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "category", 0), ct, 10, &sz_ct );
-		//roxml_release (RELEASE_LAST);
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "operator", 0), op, 32, &sz_op );
-		//roxml_release (RELEASE_LAST);
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
-		//roxml_release (RELEASE_LAST);
 		/* Comparaison des elements en fonction du type */
-		/*if (strcasecmp(ct,"time") == 0 )
-			ret = compareClockStrings(tickTime, op, timeStr2int(va));
-		else if (strcasecmp(ct,"date") == 0 )
-			ret = compareClockStrings(tickDate, op, dateStr2int(va));
-		else if (strcasecmp(ct,"day") == 0 )
-			ret = compareClockStrings(tickDay, op, atoi(va));
-		else if (strcasecmp(ct,"month") == 0 )
-			ret = compareClockStrings(tickMonth, op, monthStr2int(va));
-		else if (strcasecmp(ct,"year") == 0 )
-			ret = compareClockStrings(tickYear, op, atoi(va));*/
 		if (strcasecmp(ct,"time") == 0 )
 			ret = compareClockStrings(tb->tm_hour*60+tb->tm_min, op, timeStr2int(va));
 		else if (strcasecmp(ct,"date") == 0 )
@@ -156,12 +142,12 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 			ret = compareClockStrings(tb->tm_year+1900, op, atoi(va));
 
 			
-		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : Via time_t : Date=%d Heure=%d",(tb->tm_year+1900)*10000+(tb->tm_mon+1)*100+tb->tm_mday, tb->tm_hour*60+tb->tm_min);
+	/*	HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : Via time_t : Date=%d Heure=%d",(tb->tm_year+1900)*10000+(tb->tm_mon+1)*100+tb->tm_mday, tb->tm_hour*60+tb->tm_min);
 
 		char dn[80]; int sz_dn;
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "display_name", 0), dn, 80, &sz_dn );
 		roxml_release (RELEASE_LAST);
-		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %s -> %s", dn, ret?"OK":"NOK");
+		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %s -> %s", dn, ret?"OK":"NOK");*/
 		
 		/* Sorite de la boucle dès qu'une condition est fausse */
 		if ( ret && anyRule )

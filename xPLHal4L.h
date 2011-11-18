@@ -16,12 +16,14 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <sys/utsname.h>
+#include <stdarg.h>
 
 #include <time.h>
 #include <signal.h>
 #include <pthread.h>
 #include <xPL.h>
 #include <roxml.h>
+
 //#include "./sqlite/sqlite3.h"
 
 #include "XHCP_server.h"
@@ -44,6 +46,11 @@
 /* Prototypes ********************************************************************/
 EXT_XPLHAL4L int saveHal4lConfig (char *);
 EXT_XPLHAL4L int loadHal4lConfig (char *);
+
+EXT_XPLHAL4L int  HAL4L_getDebug();
+EXT_XPLHAL4L void HAL4L_setDebug(int isDebugging);
+EXT_XPLHAL4L void HAL4L_Debug(String theFormat, ...);
+
 
 /* Variables globales ************************************************************/
 EXT_XPLHAL4L char *HAL4L_configFile;

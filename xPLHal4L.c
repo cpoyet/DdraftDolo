@@ -6,6 +6,49 @@
 
 int stop = 0;
 
+int HAL4L_debugMode = 0;
+static char logMessageBuffer[256];
+
+/* Return if debug mode in use */
+int HAL4L_getDebug() {
+  return HAL4L_debugMode;
+}
+
+/* Set Debugging Mode */
+void HAL4L_setDebug(int isDebugging) {
+  HAL4L_debugMode = isDebugging;
+}
+
+/* Write a debug message out (if we are debugging) */
+void HAL4L_Debug(String theFormat, ...)
+{
+  va_list theParms;
+  time_t rightNow;
+  
+  /* Skip if not a debug message */
+  if (!HAL4L_debugMode) return;
+
+  /* Get access to the variable parms */
+  va_start(theParms, theFormat);
+
+  /* Write a time stamp */
+  time(&rightNow);
+  strftime(logMessageBuffer, 40, "%y/%m/%d %H:%M:%S ", localtime(&rightNow));
+  strcat(logMessageBuffer, "xPLHal4L : ");
+
+  /* Convert formatted message */
+  vsprintf(&logMessageBuffer[strlen(logMessageBuffer)], theFormat, theParms);
+
+  /* Write to the console or system log file */
+  strcat(logMessageBuffer, "\n");
+  fprintf(stderr, logMessageBuffer);
+
+  /* Release parms */
+  va_end(theParms);
+}
+
+
+
 int getOptions ( int argc, char **argv)
 {
     int c;
@@ -14,13 +57,14 @@ int getOptions ( int argc, char **argv)
     {
         {"config", 		1, NULL, 'c'},
         {"xhcpconfig", 	1, NULL, 'x'},
+        {"debug", 		0, NULL, 'd'},
         {"help", 		0, NULL, 'h'},
         {0, 0, 0, 0}
     };
     
     while (1)
     {
-        c = getopt_long (argc, argv, "x:c:h", long_options, &option_index);
+        c = getopt_long (argc, argv, "x:c:hd", long_options, &option_index);
         if (c == -1)
             break;
         
@@ -31,6 +75,9 @@ int getOptions ( int argc, char **argv)
                 break;
             case 'x':
                 XHCP_setConfigFile (optarg);
+                break;
+            case 'd':
+                HAL4L_setDebug(1);
                 break;
             case 'h':
                 printf ("option help\n");
@@ -48,7 +95,7 @@ int getOptions ( int argc, char **argv)
 
 int loadHal4lConfig (char *fileName)
 {
-    printf ("Loading xPLHal4L server configuration...\n");
+    HAL4L_Debug ("Loading xPLHal4L server configuration...");
 	
 	if ( rootConfig != NULL )
 		 roxml_close (rootConfig);
@@ -173,7 +220,7 @@ int main (int argc, String argv[])
     
     if ( HAL4L_getConfigFile ()==NULL )
     {
-        printf ("Loading default configuration file: config.xml\n");
+        HAL4L_Debug ("Loading default configuration file: config.xml");
         HAL4L_setConfigFile ("config.xml");
     }
     
@@ -193,7 +240,7 @@ int main (int argc, String argv[])
 		toto = XHCP_server (rootConfig);
 		if ( toto != oldToto )
 		{
-			printf("Statut : %s\n", XHCPstate2String(toto));
+			HAL4L_Debug("Statut : %s", XHCPstate2String(toto));
 			oldToto = toto;
 		}
 

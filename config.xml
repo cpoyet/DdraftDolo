@@ -39,8 +39,11 @@
     <timeCondition display_name="premiere condition test" operator="&gt;" category="time" value="21:39"/>
    </input>
    <output>
-    <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>
-   </output>
+       <logAction display_name="logAction-name"
+         logText="TEXT TO LOG" 
+         executeOrder="1"
+       />
+    </output>
   </determinator>
   <determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="test_time" description="Determinator de test de conversion des formats de date" groupName="" IsGroup="N" enabled="N">
    <input match="all">

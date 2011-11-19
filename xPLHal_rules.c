@@ -33,6 +33,8 @@ int rules_executeActions(node_t *detNode)
     node_t **tActLst;
     int nbActLst;
 	
+	char c1[256]; int sz_c1;
+	
 	int i;
 
 	/* Liste des actions */
@@ -51,6 +53,8 @@ int rules_executeActions(node_t *detNode)
 		
 		if ( strcasecmp(action,"logAction") == 0 )
 		{
+			roxml_get_content ( roxml_get_attr (tActLst[i], "logText", 0), c1, 255, &sz_c1 );
+			HAL4L_Debug(0, c1);
 		}
 		else if ( strcasecmp(action,"xplAction") == 0 )
 		{

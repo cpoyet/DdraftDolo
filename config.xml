@@ -43,6 +43,13 @@
          logText="TEXT TO LOG" 
          executeOrder="1"
        />
+	   <xplAction display_name="xplAction-name"
+        executeOrder="2"
+        msg_type="trig"
+        msg_target="*"
+        msg_schema="test.type">
+        <xplActionParam expression="name1=value1" />
+        <xplActionParam expression="name2=value2" />
     </output>
   </determinator>
   <determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="test_time" description="Determinator de test de conversion des formats de date" groupName="" IsGroup="N" enabled="N">

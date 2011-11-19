@@ -33,9 +33,10 @@ int rules_executeActions(node_t *detNode)
     node_t **tActLst;
     int nbActLst;
 	
+	char *p;
 	char c1[256]; int sz_c1;
 	
-	int i;
+	int i, j;
 
 	/* Liste des actions */
 	tActLst = roxml_xpath ( detNode, "output/*", &nbActLst);
@@ -58,6 +59,58 @@ int rules_executeActions(node_t *detNode)
 		}
 		else if ( strcasecmp(action,"xplAction") == 0 )
 		{
+ 			xPL_MessagePtr action_mess;
+
+			/* Allocate the message */
+			action_mess = xPL_AllocMessage();
+
+			/* Set the version (NOT DYNAMIC) */
+			roxml_get_content ( roxml_get_attr (tActLst[i], "msg_type", 0), c1, 255, &sz_c1 );
+			if ( strcasecmp("stat",c1) == 0 )
+				action_mess->messageType = xPL_MESSAGE_STATUS;
+			else if ( strcasecmp("trig",c1) == 0 )
+				action_mess->messageType = xPL_MESSAGE_TRIGGER;
+			else if ( strcasecmp("cmnd",c1) == 0 )
+				action_mess->messageType = xPL_MESSAGE_COMMAND;
+			else
+			{
+				HAL4L_Debug(HAL4L_ERROR, "ERROR - xplAction : msg_type \"%s\" unknown",c1);
+				continue;
+			}
+			
+			action_mess->receivedMessage = TRUE;
+
+			/* Allocate a name/value list, if needed */
+			if (action_mess->messageBody == NULL) action_mess->messageBody = xPL_AllocNVList();
+			
+			/* Install source into message */
+			xPL_setSource(action_mess, XPLHAL4L_VENDOR, SCHEDULER_DEVICEID, HAL4L_hostName);
+
+			roxml_get_content ( roxml_get_attr (tActLst[i], "msg_target", 0), c1, 255, &sz_c1 );
+			xPL_setTarget(action_mess, XPLHAL4L_VENDOR, SCHEDULER_DEVICEID, c1);
+
+			roxml_get_content ( roxml_get_attr (tActLst[i], "msg_schema", 0), c1, 255, &sz_c1 );
+			p = strchr(c1, '.');
+			*p='\0';
+			p++;
+			xPL_setSchema(action_mess, c1, p);
+		
+			node_t **tParamLst;
+			int nbParamLst;
+			tParamLst = roxml_xpath ( tActLst[i], "/xplActionParam[@expression]", &nbParamLst);
+	
+			for (j=0; j<nbParamLst; j++)
+			{
+				roxml_get_content ( roxml_get_attr (tActLst[i], "expression", 0), c1, 255, &sz_c1 );
+				p = strchr(c1, '=');
+				*p='\0';
+				p++;
+
+				xPL_setMessageNamedValue(action_mess, c1, p);
+			}
+		
+			xPL_sendMessage(action_mess);
+			xPL_releaseMessage(action_mess);
 		}
 		else if ( strcasecmp(action,"globalAction") == 0 )
 		{

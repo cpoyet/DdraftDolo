@@ -44,10 +44,11 @@
 #define HAL4L_getConfigFile() HAL4L_configFile
 
 /* Constantes ********************************************************************/
-#define HAL4L_DEBUG 4
-#define HAL4L_TRACE 3
+#define HAL4L_DEBUG 5
+#define HAL4L_TRACE 4
+#define HAL4L_INFO 3
 #define HAL4L_WARNING 2
-#define HAL4L_INFO 1
+#define HAL4L_ERROR 1
 #define HAL4L_NOTRACE 0
 
 /* Prototypes ********************************************************************/

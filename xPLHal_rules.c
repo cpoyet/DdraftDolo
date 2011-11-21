@@ -5,6 +5,7 @@
 
 #include "xPLHal_rules.h"
 #include "xPLHal_scheduler.h"
+#include "xPLHal_common.h"
 #include "xPLHal4L.h"
 
 
@@ -26,6 +27,9 @@ int compareClockStrings(int v1, char *op, int v2)
 	return 0;
 
 }
+
+
+
 
 int rules_executeActions(node_t *detNode)
 {

@@ -34,8 +34,8 @@ clean:
 #	rm -f *.o *.a core ${CMD_LIST}
 	rm -f *.o core ${CMD_LIST}
 
-xPLHal4L: xPLHal_scheduler.o xPLHal4L.o XHCP_server.o
-	$(LD) -g -o xPLHal4L xPLHal_scheduler.o xPLHal4L.o XHCP_server.o ./libroxml.a ./xPLLib.a $(LIBS)
+xPLHal4L: xPLHal_scheduler.o xPLHal4L.o XHCP_server.o xPLHal_rules.o xPLHal_common.o
+	$(LD) -g -o xPLHal4L xPLHal_scheduler.o xPLHal4L.o XHCP_server.o xPLHal_rules.o xPLHal_common.o ./libroxml.a ./xPLLib.a $(LIBS)
 
 rebuild: clean all
 

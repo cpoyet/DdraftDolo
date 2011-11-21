@@ -5,6 +5,7 @@
 
 #include "xPLHal_scheduler.h"
 #include "xPLHal_rules.h"
+#include "xPLHal_common.h"
 #include "xPLHal4L.h"
 
 
@@ -107,61 +108,6 @@ int monthStr2int ( char *str)
 	
 }
 
-
-char *xmlGetAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
-{
-    node_t **result;
-    int nb_result;
-    static char buffer[80];
-    int sz_buffer;
-	char *tmp;
-
-	char *xpath = (char *)malloc(strlen(nodeXpath)+strlen(attrName)+4);
-	
-	sprintf(xpath,"%s[@%s]",nodeXpath,attrName);
-    result = roxml_xpath ( argXmlConfig, xpath, &nb_result);
-    if ( nb_result == 1 )
-	{
-        tmp = roxml_get_content ( roxml_get_attr (result[0], attrName, 0), buffer, 80, &sz_buffer );
-	}
-	else if ( nb_result == 0 && opt )
-	{
-		tmp="";
-	}
-	else	
-	{
-		fprintf(stderr,"ERROR Parsing %s (%d results)\n",xpath,nb_result);
-        Error_Quit ("Error parsing timer config file");
-	}
-	free(xpath);
-	roxml_release (RELEASE_LAST);
-
-	return tmp;
-}
-
-int xmlGetBoolAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
-{
-	int i=0;
-	char *trueLst[] = {"TRUE","1","ON","VRAI",NULL};
-	char *falseLst[] = {"FALSE","0","OFF","FAUX",NULL};
-	
-	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName, opt);
-	
-	do
-	{
-		if ( strcasecmp (trueLst[i], attr) == 0 )
-			return 1;
-	} while ( trueLst[++i]!=NULL );
-	
-	return 0;
-}
-
-int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt)
-{
-	char *attr=xmlGetAttribut (argXmlConfig, nodeXpath, attrName, opt);
-	
-	return atoi(attr);
-}
 
 void timeEvent(time_t *time)
 {

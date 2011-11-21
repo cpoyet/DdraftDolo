@@ -15,6 +15,9 @@
   </twilight>
  </clocking>
  <user dateFormat="%d/%m/%Y"/>
+ <globals>
+	<global name="varGlobal" value="1" />
+ </globals>
  <determinators>
   <determinator guid="ttcdt" name="toutes conditions" description="" IsGroup="N" enabled="Y">
     <input match="all">

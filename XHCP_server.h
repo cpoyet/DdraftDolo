@@ -188,6 +188,7 @@ EXT_XHCP_SERVER int XHCPcmd_SETRULE ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SHUTDOWN ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETGLOBAL ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_SETGLOBAL ( int, int, char **);
 
 
 
@@ -247,7 +248,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_RUNSUB          , "RUNSUB"           , NULL },    
 				{ CMD_SENDXAPMSG      , "SENDXAPMSG"       , NULL },   
 				{ CMD_SENDXPLMSG      , "SENDXPLMSG"       , NULL },   
-				{ CMD_SETGLOBAL       , "SETGLOBAL"        , NULL },  
+				{ CMD_SETGLOBAL       , "SETGLOBAL"        , XHCPcmd_SETGLOBAL },  
 				{ CMD_SETRULE         , "SETRULE"          , XHCPcmd_SETRULE },
 				{ CMD_SETSETTING      , "SETSETTING"       , NULL },   
 				{ CMD_QUIT            , "QUIT"             , XHCPcmd_QUIT },   

@@ -576,29 +576,45 @@ int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
     return XHCP_EXE_DISCON;
 }
 
-int XHCPcmd_GETGLOBAL (int sockd, int argc, char **argv)
+int XHCPcmd_SETGLOBAL (int sockd, int argc, char **argv)
 {
-	if ( argc < 1 )
+	if ( argc < 3 )
 	{
 		XHCP_printXHCPResponse (sockd, RES_SYNTAXERR );  // Syntax error
 		return XHCP_EXE_ERROR;
 	}
-	
-	char *value = getGlobalValue(argv[1]);
-	
-	if ( value != NULL )
-	{
-		XHCP_printXHCPResponse (sockd, RES_GLOVALFOL ); //
-		
-		XHCP_print (sockd, value);
-        XHCP_print (sockd, ".");
-	}
-	else
-	{
-		XHCP_printXHCPResponse (sockd, RES_NOSUCHGLO ); //		
-	}
-	
+
+	if (  setGlobal(argv[1], argv[2]) == -1 )
+            XHCP_printXHCPResponse (sockd, RES_INTNERROR); // Internal error
+        else
+            XHCP_printXHCPResponse (sockd, RES_GLOVALUPD); // "Global value updated"
+        
 	return XHCP_EXE_SUCCESS;
+}
+
+int XHCPcmd_GETGLOBAL (int sockd, int argc, char **argv)
+{
+    if ( argc < 2 )
+    {
+        XHCP_printXHCPResponse (sockd, RES_SYNTAXERR );  // Syntax error
+        return XHCP_EXE_ERROR;
+    }
+    
+    char *value = getGlobal (argv[1]);
+    
+    if ( value != NULL )
+    {
+        XHCP_printXHCPResponse (sockd, RES_GLOVALFOL ); // Global value follows
+        
+        XHCP_print (sockd, value);
+        XHCP_print (sockd, ".");
+    }
+    else
+    {
+        XHCP_printXHCPResponse (sockd, RES_NOSUCHGLO ); // No such global
+    }
+    
+    return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)

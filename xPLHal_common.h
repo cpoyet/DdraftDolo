@@ -22,7 +22,7 @@ EXT_XPLHAL_COMMON int xmlGetBoolAttribut (node_t* argXmlConfig, char *nodeXpath,
 EXT_XPLHAL_COMMON int xmlGetIntAttribut (node_t* argXmlConfig, char *nodeXpath, char *attrName, int opt);
 
 EXT_XPLHAL_COMMON char *getGlobal(char *name);
-EXT_XPLHAL_COMMON int setGlobal(char *name, char *value)
+EXT_XPLHAL_COMMON int setGlobal(char *name, char *value);
 
 /* Variables globales ************************************************************/
 

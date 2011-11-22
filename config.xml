@@ -1,7 +1,11 @@
  <?xml version="1.0" encoding="utf-8"?>
  <location>
-  <latitude>48.376126</latitude>
-  <longitude>2.810753</longitude>
+  <latitude>
+   48.376126
+  </latitude>
+  <longitude>
+   2.810753
+  </longitude>
  </location>
  <XHCPserver>
   <ConnectionTimeOut delay="300"/>
@@ -10,81 +14,76 @@
   <xplclock enabled="true" interval="10"/>
   <internal interval="5"/>
   <twilight>
-    <dawn enabled="true" type="civil"/>
-    <dusk enabled="true" type="nautical"/>
+   <dawn enabled="true" type="civil"/>
+   <dusk enabled="true" type="nautical"/>
   </twilight>
  </clocking>
  <user dateFormat="%d/%m/%Y"/>
  <globals>
-	<global name="varGlobal" value="1" />
+  <global name="varGlobal" value="1"/>
+  <global name="toto" value="titi"/>
  </globals>
  <determinators>
   <determinator guid="ttcdt" name="toutes conditions" description="" IsGroup="N" enabled="Y">
-    <input match="all">
-      <xplCondition display_name="1 xPL message" msg_type="trig" source_vendor="*" source_device="*" source_instance="*" target_vendor="*" target_device="*" target_instance="*" schema_class="test" schema_type="basic">
-        <param name="champ2 !" operator="=" value="2" />
-        <param name="champ3" operator="=" value="2" />
-      </xplCondition>
-      <globalCondition display_name="2 compare global variable" name="XPLHAL.MODE" operator="&lt;" value="2" />
-      <globalChanged display_name="3 global variable changed" name="xplhal.mode" />
-      <dayCondition display_name="4 execute days" dow="0111110" />
-      <timeCondition display_name="5 Compare Datetime" category="time" operator="&lt;" value="23:22" />
-    </input>
-    <output>
-      <xplAction executeOrder="1" display_name="New Action" msg_type="trig" msg_target="*" msg_schema="test.basic">
-        <xplActionParam expression="champ=valeur" />
-      </xplAction>
-     <globalAction executeOrder="0" display_name="action test" name="cache.bonjour" value="action"/>
+   <input match="all">
+    <xplCondition display_name="1 xPL message" msg_type="trig" source_vendor="*" source_device="*" source_instance="*" target_vendor="*" target_device="*" target_instance="*" schema_class="test" schema_type="basic">
+     <param name="champ2 !" operator="=" value="2"/>
+     <param name="champ3" operator="=" value="2"/>
+    </xplCondition>
+    <globalCondition display_name="2 compare global variable" name="XPLHAL.MODE" operator="&lt;" value="2"/>
+    <globalChanged display_name="3 global variable changed" name="xplhal.mode"/>
+    <dayCondition display_name="4 execute days" dow="0111110"/>
+    <timeCondition display_name="5 Compare Datetime" category="time" operator="&lt;" value="23:22"/>
+   </input>
+   <output>
+    <xplAction executeOrder="1" display_name="New Action" msg_type="trig" msg_target="*" msg_schema="test.basic">
+     <xplActionParam expression="champ=valeur"/>
+    </xplAction>
+    <globalAction executeOrder="0" display_name="action test" name="cache.bonjour" value="action"/>
    </output>
   </determinator>
- <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="premier determinator" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
+  <determinator guid="a6b8285a-4f80-4580-f117-d953b50d3497" name="premier determinator" description="dfgvsdfgv" groupName="" IsGroup="N" enabled="Y">
    <input match="any">
     <timeCondition display_name="premiere condition test" operator="&gt;" category="time" value="21:39"/>
    </input>
    <output>
-       <logAction display_name="logAction-name"
-         logText="TEXT TO LOG" 
-         executeOrder="1"
-       />
-	   <xplAction display_name="xplAction-name"
-        executeOrder="2"
-        msg_type="trig"
-        msg_target="*"
-        msg_schema="test.type">
-        <xplActionParam expression="name1=value1" />
-        <xplActionParam expression="name2=value2" />
+    <logAction display_name="logAction-name" logText="TEXT TO LOG" executeOrder="1"/>
+    <xplAction display_name="xplAction-name" executeOrder="2" msg_type="trig" msg_target="*" msg_schema="test.type">
+     <xplActionParam expression="name1=value1"/>
+     <xplActionParam expression="name2=value2"/>
+    </xplAction>
+   </output>
+   <determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="test_time" description="Determinator de test de conversion des formats de date" groupName="" IsGroup="N" enabled="N">
+    <input match="all">
+     <timeCondition display_name="Format %d %b %Y" operator="&gt;" category="date" value="3oct2011"/>
+     <timeCondition display_name="Format %d %b %Y francais" operator="&lt;" category="date" value="3fev2012"/>
+     <timeCondition display_name="Format %d %b %Y anglais" operator="&lt;" category="date" value="3feb2012"/>
+     <timeCondition display_name="Format %d %B %Y francais" operator="&lt;" category="date" value="3octobre2011"/>
+     <timeCondition display_name="Format %d %B %Y anglais" operator="&lt;" category="date" value="3october2011"/>
+     <timeCondition display_name="Format %Y %m %d" operator="&gt;=" category="date" value="2011100="/>
+     <timeCondition display_name="Format %b %d %Y" operator="&gt;" category="date" value="oct 3, 2011"/>
+     <timeCondition display_name="Format %b %B %Y" operator="&lt;=" category="date" value="october 5 2011"/>
+     <timeCondition display_name="Format user    " operator="&gt;" category="date" value="3/1/2011"/>
+     <timeCondition display_name="heure uniquement" operator="&gt;" category="time" value="1:9"/>
+     <timeCondition display_name="heure uniquement" operator="&gt;" category="time" value="11:9"/>
+     <timeCondition display_name="heure uniquement" operator="&lt;" category="time" value="11:19"/>
+     <timeCondition display_name="annee uniquement" operator="=" category="year" value="2011"/>
+    </input>
+    <output>
+     <globalAction executeOrder="action test1" display_name="action test" name="cache.bonjour" value="action"/>
+     <globalAction executeOrder="action test2" display_name="action test" name="cache.bonjour" value="action"/>
     </output>
-  </determinator>
-  <determinator guid="f14e0e86-db28-cfd5-84f0-8e8eea60b1bf" name="test_time" description="Determinator de test de conversion des formats de date" groupName="" IsGroup="N" enabled="N">
-   <input match="all">
-    <timeCondition display_name="Format %d %b %Y" operator="&gt;" category="date" value="3oct2011"/>
-    <timeCondition display_name="Format %d %b %Y francais" operator="&lt;" category="date" value="3fev2012"/>
-    <timeCondition display_name="Format %d %b %Y anglais"  operator="&lt;" category="date" value="3feb2012"/>
-    <timeCondition display_name="Format %d %B %Y francais" operator="&lt;" category="date" value="3octobre2011"/>
-    <timeCondition display_name="Format %d %B %Y anglais"  operator="&lt;" category="date" value="3october2011"/>
-    <timeCondition display_name="Format %Y %m %d" operator="&gt;=" category="date" value="2011100="/>
-    <timeCondition display_name="Format %b %d %Y" operator="&gt;" category="date" value="oct 3, 2011"/>
-    <timeCondition display_name="Format %b %B %Y" operator="&lt;=" category="date" value="october 5 2011"/>
-    <timeCondition display_name="Format user    " operator="&gt;" category="date" value="3/1/2011"/>
-    <timeCondition display_name="heure uniquement" operator="&gt;" category="time" value="1:9"/>
-    <timeCondition display_name="heure uniquement" operator="&gt;" category="time" value="11:9"/>
-    <timeCondition display_name="heure uniquement" operator="&lt;" category="time" value="11:19"/>
-    <timeCondition display_name="annee uniquement" operator="=" category="year" value="2011"/>
-   </input>
-   <output>
-    <globalAction executeOrder="action test1" display_name="action test" name="cache.bonjour" value="action"/>
-    <globalAction executeOrder="action test2" display_name="action test" name="cache.bonjour" value="action"/>
-   </output>
-  </determinator>
-  <determinator guid="test"/>
-  <determinator guid="327026c8-99d4-4634-b997-2c5af83e7269"/>
-  <determinator guid="toto"/>
-  <determinator name="vdfvgd" description="hahaha" groupName="" IsGroup="N" enabled="Y" guid="zaza">
-   <input match="all">
-    <timeCondition display_name="troisieme condition test" operator="&gt;" category="time" value="21:39"/>
-   </input>
-   <output>
-    <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>
-   </output>
+   </determinator>
+   <determinator guid="test"/>
+   <determinator guid="327026c8-99d4-4634-b997-2c5af83e7269"/>
+   <determinator guid="toto"/>
+   <determinator name="vdfvgd" description="hahaha" groupName="" IsGroup="N" enabled="Y" guid="zaza">
+    <input match="all">
+     <timeCondition display_name="troisieme condition test" operator="&gt;" category="time" value="21:39"/>
+    </input>
+    <output>
+     <globalAction executeOrder="action test" display_name="action test" name="cache.bonjour" value="action"/>
+    </output>
+   </determinator>
   </determinator>
  </determinators>

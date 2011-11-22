@@ -21,6 +21,7 @@ char *getGlobal(char *name)
 	{
         ret = roxml_get_content ( roxml_get_attr (result[0], "value", 0), buffer, 80, &sz_buffer );
 	}
+	roxml_release(RELEASE_LAST);
 	
 	free(xpath);
 
@@ -34,28 +35,29 @@ int setGlobal(char *name, char *value)
 
 	char *xpath = (char *)malloc(strlen(name)+27);
 
-	sprintf(xpath,"//globals/global[@name='%s']",name);
-    result = roxml_xpath ( rootConfig, xpath, &nb_result);
-    if ( nb_result == 1 )
-	{
-        node_t *attr = roxml_get_attr (result[0], "value", 0);
-		if (attr != NULL )
-			roxml_del_node(attr);
-		roxml_add_node(result[0], 0, ROXML_ATTR_NODE, "value", value);
-	}
-	else if ( nb_result == 0 )
-	{
-		result = roxml_xpath ( rootConfig, "//globals", &nb_result);
-		node_t *tmp = roxml_add_node(result[0], 0, ROXML_ELM_NODE, "global", NULL);
-		roxml_add_node(tmp, 0, ROXML_ATTR_NODE, "name", name);
-		roxml_add_node(tmp, 0, ROXML_ATTR_NODE, "value", value);
-	}
-	else
-		return -1;
-	
-	saveHal4lConfig (HAL4L_getConfigFile ());
-	
-	return 0;
+        sprintf (xpath, "//globals/global[@name='%s']", name);
+        result = roxml_xpath ( rootConfig, xpath, &nb_result);
+        if ( nb_result == 1 )
+        {
+            node_t *attr = roxml_get_attr (result[0], "value", 0);
+            if (attr != NULL )
+                roxml_del_node (attr);
+            roxml_add_node (result[0], 0, ROXML_ATTR_NODE, "value", value);
+			roxml_release(RELEASE_LAST);
+        }
+        else if ( nb_result == 0 )
+        {
+            result = roxml_xpath ( rootConfig, "//globals", &nb_result);
+            node_t *tmp = roxml_add_node (result[0], 0, ROXML_ELM_NODE, "global", NULL);
+            roxml_add_node (tmp, 0, ROXML_ATTR_NODE, "name", name);
+            roxml_add_node (tmp, 0, ROXML_ATTR_NODE, "value", value);
+        }
+        else
+            return -1;
+        
+        saveHal4lConfig (HAL4L_getConfigFile ());
+        
+        return 0;
 }
 
 

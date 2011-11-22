@@ -21,6 +21,7 @@
 #include <roxml.h>
 
 #include "XHCP_server.h"
+#include "xPLHal_common.h"
 #include "xPLHal4L.h"
 
 /*  Global macros/variables  */
@@ -573,6 +574,31 @@ int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
     XHCP_printMessage (sockd, 221, "Shuting down in progress ... Good night... !!" );
     
     return XHCP_EXE_DISCON;
+}
+
+int XHCPcmd_GETGLOBAL (int sockd, int argc, char **argv)
+{
+	if ( argc < 1 )
+	{
+		XHCP_printXHCPResponse (sockd, RES_SYNTAXERR );  // Syntax error
+		return XHCP_EXE_ERROR;
+	}
+	
+	char *value = getGlobalValue(argv[1]);
+	
+	if ( value != NULL )
+	{
+		XHCP_printXHCPResponse (sockd, RES_GLOVALFOL ); //
+		
+		XHCP_print (sockd, value);
+        XHCP_print (sockd, ".");
+	}
+	else
+	{
+		XHCP_printXHCPResponse (sockd, RES_NOSUCHGLO ); //		
+	}
+	
+	return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_CAPABILITIES (int sockd, int argc, char **argv)

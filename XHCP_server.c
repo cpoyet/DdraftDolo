@@ -1,5 +1,4 @@
 
-
 #define _XHCP_SERVER_C_
 
 
@@ -584,7 +583,7 @@ int XHCPcmd_GETGLOBAL (int sockd, int argc, char **argv)
 		return XHCP_EXE_ERROR;
 	}
 	
-	char *value = getGlobalValue(argv[1]);
+	char *value = getGlobal(argv[1]);
 	
 	if ( value != NULL )
 	{

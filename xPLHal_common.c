@@ -37,6 +37,7 @@ int setGlobal(char *name, char *value)
 
         sprintf (xpath, "//globals/global[@name='%s']", name);
         result = roxml_xpath ( rootConfig, xpath, &nb_result);
+		free(xpath);
         if ( nb_result == 1 )
         {
             node_t *attr = roxml_get_attr (result[0], "value", 0);
@@ -47,16 +48,20 @@ int setGlobal(char *name, char *value)
         }
         else if ( nb_result == 0 )
         {
+		roxml_release(RELEASE_LAST);
             result = roxml_xpath ( rootConfig, "//globals", &nb_result);
             node_t *tmp = roxml_add_node (result[0], 0, ROXML_ELM_NODE, "global", NULL);
             roxml_add_node (tmp, 0, ROXML_ATTR_NODE, "name", name);
             roxml_add_node (tmp, 0, ROXML_ATTR_NODE, "value", value);
+			roxml_release(RELEASE_LAST);
         }
         else
             return -1;
         
         saveHal4lConfig (HAL4L_getConfigFile ());
-        
+ 	
+    loadHal4lConfig (HAL4L_getConfigFile ());
+       
         return 0;
 }
 

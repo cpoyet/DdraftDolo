@@ -117,13 +117,22 @@ int saveHal4lConfig (char *fileName)
 	char * buffer = NULL;
 	FILE * file_out;
 
+    HAL4L_Debug (HAL4L_INFO,"Write xPLHal4L server configuration...");
+
 	szBuffer = roxml_commit_changes(rootConfig, NULL, &buffer, 1);
 
 	file_out = fopen(fileName, "w");
 	fwrite(buffer, 1, szBuffer, file_out);
 	fclose(file_out);
 
-	printf("Fichier config sauvegarde\n");
+	
+    HAL4L_Debug (HAL4L_DEBUG,"%s", buffer);
+
+	roxml_release(buffer);
+
+	
+//	szBuffer = roxml_commit_changes(rootConfig, fileName, NULL, 0);
+
 	return 0;
 }
 
@@ -230,7 +239,7 @@ int main (int argc, String argv[])
     while ( !stop)
 	{
 
-		anim(4);
+		anim(1);
 
 		enum XHCPstate_list toto;
 		enum XHCPstate_list oldToto;

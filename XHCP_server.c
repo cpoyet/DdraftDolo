@@ -855,7 +855,8 @@ int XHCPcmd_GETCONFIGXML (int sockd, int argc, char **argv)
 	XHCP_print (sockd, writeBuffer);
 	XHCP_print (sockd, ".");
 	
-	free (writeBuffer);
+	//free (writeBuffer);
+	roxml_release(RELEASE_LAST);
 
     return XHCP_EXE_SUCCESS;
 }

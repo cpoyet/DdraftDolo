@@ -1,12 +1,12 @@
 
-CC=cc
+CC=gcc
 CFLAGS=-I/usr/local/include
 LDFLAGS= -L/usr/local/lib
 
-RM=/usr/bin/rm
-MAKE=/usr/ccs/bin/make
+RM=/bin/rm
+MAKE=/usr/bin/make
 MAKEDEPEND=/usr/openwin/bin/makedepend
-AR=/usr/ccs/bin/ar
+AR=/usr/bin/ar
 
 SRC= xPL-config.c xPL-hub.c xPL-io.c xPL-listeners.c xPL-message.c xPL-service.c xPL-store.c xPL-utils.c
 ARCH= ../xPLLib.a
@@ -15,10 +15,9 @@ ARCH= ../xPLLib.a
 OBJ=$(SRC:%.c=%.o)
 
 %.o: %.c
-  $(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
-all: 
-	@$(MAKE) $(ARCH)
+all: $(ARCH)
 
 $(ARCH): $(OBJ)
 	@echo Création de la l\'archive $(ARCH)

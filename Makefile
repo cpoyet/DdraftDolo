@@ -12,7 +12,8 @@ LIBS = -g -luuid
 # ******* No more customizations from here down *********
 # *******************************************************
 
-LDOPTS	= -O
+#LDOPTS	= -O
+LDOPTS	= 
 CC	=	gcc $(CCOPTS)
 LD	= 	gcc $(LDOPTS)
 
@@ -38,8 +39,3 @@ xPLHal4L: xPLHal_scheduler.o xPLHal4L.o XHCP_server.o xPLHal_rules.o xPLHal_comm
 	$(LD) -g -o xPLHal4L xPLHal_scheduler.o xPLHal4L.o XHCP_server.o xPLHal_rules.o xPLHal_common.o ./libroxml.a ./xPLLib.a $(LIBS)
 
 rebuild: clean all
-
-
-
-
-

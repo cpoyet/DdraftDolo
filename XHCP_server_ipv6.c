@@ -19,7 +19,7 @@
 
 #include <roxml.h>
 
-#include "XHCP_server.h"
+#include "XHCP_server_ipv6.h"
 #include "xPLHal_common.h"
 #include "xPLHal4L.h"
 
@@ -369,6 +369,22 @@ int XHCP_loadConfig (node_t* argXmlConfig)
     return 0;
 }
 
+int processHttpRequest(int sockd, char *buffer)
+{
+    char *sep = "\n";
+    char *line, *brkt;
+    char *responseBuffer=NULL;
+
+
+	for (line = strtok_r(buffer, sep, &brkt); line; line = strtok_r(NULL, sep, &brkt))
+	{
+		responseBuffer = addBuffer (responseBuffer, line);
+		//printf("Ligne HTTP : %s\n",line);
+	}
+	XHCP_print (sockd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %i\r\n\r\n%s",strlen(responseBuffer),responseBuffer);
+	
+	return 0;
+}
 
 int XHCP_server (node_t* argXmlConfig)
 {
@@ -380,13 +396,15 @@ int XHCP_server (node_t* argXmlConfig)
     //static struct sockaddr_in servaddr;
     static struct sockaddr_storage servaddr;
 	
+	static struct timeval time_conn, time_resp;
+	
     static char *additionalDataBuffer=NULL;
     static int argc = 0;
     static char *argv[MAX_CMD_ARGS+1];
    
     static char	buffer[MAX_REQ_LINE] = {0};
+	
 	int		status, nbCar;
-
 	// Variables non persistantes
 	int sockV4, sockV6;
 	struct addrinfo hints,  *list_addr, *p_adresse, *aiv4, *aiv6, *choix_ai;
@@ -501,7 +519,6 @@ int XHCP_server (node_t* argXmlConfig)
 			}
 			
 			/*  Assign socket address to socket  */
-//			if ( bind (listener, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
 			if ( bind (listener, choix_ai->ai_addr, choix_ai->ai_addrlen) < 0 )
 			{
 				perror("Bind");
@@ -517,6 +534,7 @@ int XHCP_server (node_t* argXmlConfig)
 			
 			freeaddrinfo(list_addr);
 			
+			/* Diverses initialisations */
 			XHCP_customWelcomeMessage ();
 		
 			/* L'initialisation est terminée, on passe à la suite */
@@ -538,14 +556,53 @@ int XHCP_server (node_t* argXmlConfig)
 					Error_Quit ("Error calling accept()");
 			
 			}
-			//TODO Gestion du timeout
+			//Gestion du timeout pour la bascule en mode commande
+			gettimeofday(&time_conn, NULL);
 			
-			XHCP_printXHCPResponse (conn, RES_HALWELCOM );  // Petit message de bienvenue
-			
-			XHCP_running_status = XHCPstate_waitCommand;
+			//XHCP_running_status = XHCPstate_waitCommand;
+			XHCP_running_status = XHCPstate_waitHTTPRequest;
 		
 			/* No break, we continue !!!*/
 			
+		/* ------------------------------------------------------------------------ */
+		case (XHCPstate_waitHTTPRequest):
+		
+			if ( (nbCar = recv(conn, buffer, MAX_REQ_LINE - 1, MSG_DONTWAIT)) <0 )
+			{
+				if ( (errno == EWOULDBLOCK) || (errno == EAGAIN) )
+				{
+					//TODO Gestion du timeout
+					gettimeofday(&time_resp, NULL);
+					if ( timerdiff(&time_conn, &time_resp) > 100000 )
+					{
+						// On passe en mode "Commande"
+						XHCP_running_status = XHCPstate_waitCommand;
+						XHCP_printXHCPResponse (conn, RES_HALWELCOM );  // Petit message de bienvenue
+					}
+					return XHCP_running_status;
+				}
+				else
+					Error_Quit ("Error calling accept()");
+			
+			}
+		
+			buffer[nbCar]='\0';
+
+			/* We suppress all extra characters */
+			Trim (buffer, 0);
+
+			
+			processHttpRequest(conn, buffer);
+
+
+			
+			if ( close (conn) < 0 )
+				Error_Quit ("Error closing connection socket in parent.");
+
+			
+			XHCP_running_status = XHCPstate_waitConnect;
+			return  XHCP_running_status;
+
 		/* ------------------------------------------------------------------------ */
 		case (XHCPstate_waitCommand):
 		

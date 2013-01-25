@@ -195,6 +195,7 @@ EXT_XHCP_SERVER int XHCPcmd_SHUTDOWN ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETGLOBAL ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SETGLOBAL ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_LISTGLOBALS ( int, int, char **);
 
 EXT_XHCP_SERVER int processHttpRequest(int, char *);
 
@@ -237,7 +238,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_LISTALLDEVS     , "LISTALLDEVS"      , NULL },    
 				{ CMD_LISTDEVICES     , "LISTDEVICES"      , NULL },    
 				{ CMD_LISTEVENTS      , "LISTEVENTS"       , NULL },   
-				{ CMD_LISTGLOBALS     , "LISTGLOBALS"      , NULL },    
+				{ CMD_LISTGLOBALS     , "LISTGLOBALS"      , XHCPcmd_LISTGLOBALS },    
 				{ CMD_LISTOPTIONS     , "LISTOPTIONS"      , NULL },    
 				{ CMD_LISTRULEGROUPS  , "LISTRULEGROUPS"   , NULL },  
 				{ CMD_LISTRULES       , "LISTRULES"        , XHCPcmd_LISTRULES },  

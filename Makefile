@@ -4,7 +4,7 @@
 
 #
 #CCOPTS = -g -DLINUX -pedantic -I./xPLLib -I./libroxml
-CCOPTS = -g -DLINUX -I./xPLLib -I./libroxml
+CCOPTS = -g -DLINUX -I./xPLLib -I./libroxml/inc
 LIBS = -g -luuid 
 
 

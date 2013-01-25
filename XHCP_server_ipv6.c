@@ -37,6 +37,29 @@
 #endif
 
 
+#define XPLHAL_ROOT_PAGE "<html>\
+<head>\
+<meta content=\"text/html; charset=ISO-8859-1\"\
+http-equiv=\"content-type\">\
+<title></title>\
+</head>\
+<body>\
+<table style=\"text-align: left; width: 774px; height: 449px;\" border=\"1\"\
+cellpadding=\"2\" cellspacing=\"2\">\
+<tbody>\
+<tr>\
+<td style=\"vertical-align: top; height: 57px;\"><span\
+style=\"font-family: monospace;\">&nbsp;xPLHal4L.foxg20\
+(Linux/armv5tejl) Version 0.0.1 XHCP 1.5 ready<br>\
+</span><br>\
+</td>\
+</tr>\
+</tbody>\
+</table>\
+<br>\
+</body>\
+</html>"
+
 
 
 
@@ -125,12 +148,13 @@ int Trim (char * buffer, int mode)
 
 ssize_t Writeline (int sockd, const void *vptr, size_t n)
 {
-    size_t      nleft;
+    size_t      nleft, nsent;
     ssize_t     nwritten;
     const char *buffer;
     
     buffer = vptr;
     nleft  = n;
+	nsent = 0;
     
     while ( nleft > 0 )
     {
@@ -143,9 +167,10 @@ ssize_t Writeline (int sockd, const void *vptr, size_t n)
         }
         nleft  -= nwritten;
         buffer += nwritten;
+		nsent += nwritten;
     }
     
-    return n;
+    return nsent;
 }
 
 
@@ -153,6 +178,7 @@ void XHCP_print (int sockd, char *Libelle, ... )
 {
     va_list Marker;
     //char msg[256];
+	ssize_t wcar;
     
     int sz_alloc=strlen (Libelle) + 256;
     int sz_msg;
@@ -173,7 +199,8 @@ void XHCP_print (int sockd, char *Libelle, ... )
     
     va_end ( Marker);
     
-    Writeline (sockd, msg, strlen (msg));
+    wcar = Writeline (sockd, msg, strlen (msg));
+	//printf("XHCP_print print Ligne [%i] char writen\n",wcar);
     
     sz_msg=strlen (msg);
     if ( msg[sz_msg-1] != '\n' )
@@ -379,10 +406,17 @@ int processHttpRequest(int sockd, char *buffer)
 	for (line = strtok_r(buffer, sep, &brkt); line; line = strtok_r(NULL, sep, &brkt))
 	{
 		responseBuffer = addBuffer (responseBuffer, line);
-		//printf("Ligne HTTP : %s\n",line);
+		printf("Ligne HTTP : [%s]\n",line);
 	}
-	XHCP_print (sockd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %i\r\n\r\n%s",strlen(responseBuffer),responseBuffer);
+	printf("Buffer : %i car. [%s]\n",strlen(responseBuffer), responseBuffer);
+	//responseBuffer = "coucou xPLHal est là !!";
+	//XHCP_print (sockd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %i\r\n\r\n%s",strlen(responseBuffer),responseBuffer);
 	
+	responseBuffer = XPLHAL_ROOT_PAGE;
+	
+	Writeline (sockd, responseBuffer, strlen(responseBuffer));
+
+	//free(responseBuffer);
 	return 0;
 }
 
@@ -720,6 +754,30 @@ int XHCPcmd_SHUTDOWN (int sockd, int argc, char **argv)
     XHCP_printMessage (sockd, 221, "Shuting down in progress ... Good night... !!" );
     
     return XHCP_EXE_DISCON;
+}
+
+int XHCPcmd_LISTGLOBALS (int sockd, int argc, char **argv)
+{
+    node_t **globalsLst;
+    char buffer[XHCP_BUFFER_SZ];
+    int sz_buffer;
+    int i, nb;
+    
+    XHCP_printXHCPResponse (sockd, RES_LSTGLVFOL ); // List of global variables follows
+    
+    if ( (globalsLst = roxml_xpath (rootConfig, "//global", &nb )) !=NULL )
+    {
+        for (i=0; i<nb; i++)
+        {
+            char *champ1 = roxml_get_content ( roxml_get_attr (globalsLst[i], "name", 0), buffer, XHCP_BUFFER_SZ, &sz_buffer );
+            char *champ2 = roxml_get_content ( roxml_get_attr (globalsLst[i], "value", 0), champ1 + sz_buffer + 1, XHCP_BUFFER_SZ, &sz_buffer );
+            
+            XHCP_print (sockd, "%s=%s", champ1, champ2);
+        }
+    }
+    
+    XHCP_print (sockd, ".");
+    return XHCP_EXE_SUCCESS;
 }
 
 int XHCPcmd_SETGLOBAL (int sockd, int argc, char **argv)

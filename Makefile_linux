@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-I/usr/local/include -I./xPLLib -I./libroxml
+CFLAGS=-I/usr/local/include -I./xPLLib -I./libroxml/inc
 LDFLAGS= -L/usr/local/lib -lxnet 
 
 RM=/usr/bin/rm

@@ -953,7 +953,6 @@ int XHCPcmd_DELRULE (int sockd, int argc, char **argv)
     int sz_buffer;
     int nb;
     
-     char *writeBuffer = NULL;
     
     
     if (argc != 2)
@@ -972,15 +971,11 @@ int XHCPcmd_DELRULE (int sockd, int argc, char **argv)
     {
         
         roxml_del_node (rulesNodesLst[0]);
-printf ("delnode OK\n");
-        sz_buffer = roxml_commit_changes (rootConfig, NULL, &writeBuffer, 0);
-printf ("commit OK\n");        
- //       XHCP_print (sockd, writeBuffer);
- //       XHCP_print (sockd, ".");
 
+		saveHal4lConfig (HAL4L_getConfigFile ());
+		loadHal4lConfig (HAL4L_getConfigFile ());
+	
         XHCP_printXHCPResponse (sockd, RES_SCRSUCDEL ); // Script/rule successfully deleted
-        
-        free (writeBuffer);
     }
     
     

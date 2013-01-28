@@ -76,7 +76,6 @@
     <globalAction executeOrder="action test2" display_name="action test" name="cache.bonjour" value="action"/>
    </output>
   </determinator>
-  <determinator guid="test"/>
   <determinator guid="327026c8-99d4-4634-b997-2c5af83e7269"/>
   <determinator guid="toto"/>
   <determinator name="vdfvgd" description="hahaha" groupName="" IsGroup="N" enabled="Y" guid="zaza">

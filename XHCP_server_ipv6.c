@@ -946,6 +946,49 @@ int XHCPcmd_GETRULE (int sockd, int argc, char **argv)
     return XHCP_EXE_SUCCESS;
 }
 
+int XHCPcmd_DELRULE (int sockd, int argc, char **argv)
+{
+    node_t **rulesNodesLst;
+    char buffer[XHCP_BUFFER_SZ];
+    int sz_buffer;
+    int nb;
+    
+     char *writeBuffer = NULL;
+    
+    
+    if (argc != 2)
+    {
+        XHCP_printXHCPResponse (sockd, RES_SYNTAXERR ); // Syntax Error
+        return XHCP_EXE_ERROR;
+    }
+    
+    sprintf (buffer, "//determinator[@guid='%s']", argv[1]);
+    
+    printf ("%s\n", buffer);
+    
+    if ( (rulesNodesLst = roxml_xpath (rootConfig, buffer, &nb )) == NULL )
+        XHCP_printXHCPResponse (sockd, RES_NOSUCHSCR ); // No such script/rule
+    else
+    {
+        
+        roxml_del_node (rulesNodesLst[0]);
+printf ("delnode OK\n");
+        sz_buffer = roxml_commit_changes (rootConfig, NULL, &writeBuffer, 0);
+printf ("commit OK\n");        
+ //       XHCP_print (sockd, writeBuffer);
+ //       XHCP_print (sockd, ".");
+
+        XHCP_printXHCPResponse (sockd, RES_SCRSUCDEL ); // Script/rule successfully deleted
+        
+        free (writeBuffer);
+    }
+    
+    
+    
+    return XHCP_EXE_SUCCESS;
+}
+
+
 int XHCPcmd_SETRULE_handle (int sockd, int argc, char **argv, char *data)
 {
     node_t *nTmp;

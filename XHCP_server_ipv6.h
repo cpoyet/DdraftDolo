@@ -191,6 +191,7 @@ EXT_XHCP_SERVER int XHCPcmd_PUTCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_LISTRULES ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETRULE ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SETRULE ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_DELRULE ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SHUTDOWN ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETGLOBAL ( int, int, char **);
@@ -224,7 +225,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_DELDEVCONFIG    , "DELDEVCONFIG"     , NULL },
 				{ CMD_DELEVENT        , "DELEVENT"         , NULL }, 
 				{ CMD_DELGLOBAL       , "DELGLOBAL"        , NULL },  
-				{ CMD_DELRULE         , "DELRULE"          , NULL },
+				{ CMD_DELRULE         , "DELRULE"          , XHCPcmd_DELRULE },
 				{ CMD_DELSCRIPT       , "DELSCRIPT"        , NULL },  
 				{ CMD_GETCONFIGXML    , "GETCONFIGXML"     , XHCPcmd_GETCONFIGXML },
 				{ CMD_GETDEVCONFIG    , "GETDEVCONFIG"     , NULL },
@@ -278,7 +279,7 @@ EXT_XHCP_SERVER XHCP_response XHCP_responseList[] = {
 				{ RES_SCRSAVSUC, 211, "Script saved successfully" },
 				{ RES_LSTSCRFOL, 212, "List of scripts follows" },
 				{ RES_XPLMSGTRA, 213, "XPL message transmitted" },
-				{ RES_SCRSUCDEL, 214, "Script successfully deleted" },
+				{ RES_SCRSUCDEL, 214, "Script/rule successfully deleted" },
 				{ RES_CFGDOCUPL, 215, "Configuration document uploaded" },
 				{ RES_LSTXPLDFO, 216, "List of XPL devices follows" },
 				{ RES_LSTGFGITF, 217, "List of config items follows" },

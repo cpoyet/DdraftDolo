@@ -196,6 +196,7 @@ EXT_XHCP_SERVER int XHCPcmd_SHUTDOWN ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETCONFIGXML ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_GETGLOBAL ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_SETGLOBAL ( int, int, char **);
+EXT_XHCP_SERVER int XHCPcmd_DELGLOBAL ( int, int, char **);
 EXT_XHCP_SERVER int XHCPcmd_LISTGLOBALS ( int, int, char **);
 
 EXT_XHCP_SERVER int processHttpRequest(int, char *);
@@ -224,7 +225,7 @@ EXT_XHCP_SERVER XHCP_command XHCP_commandList[] = {
 				{ CMD_CLEARERRLOG     , "CLEARERRLOG"      , NULL },    
 				{ CMD_DELDEVCONFIG    , "DELDEVCONFIG"     , NULL },
 				{ CMD_DELEVENT        , "DELEVENT"         , NULL }, 
-				{ CMD_DELGLOBAL       , "DELGLOBAL"        , NULL },  
+				{ CMD_DELGLOBAL       , "DELGLOBAL"        , XHCPcmd_DELGLOBAL },  
 				{ CMD_DELRULE         , "DELRULE"          , XHCPcmd_DELRULE },
 				{ CMD_DELSCRIPT       , "DELSCRIPT"        , NULL },  
 				{ CMD_GETCONFIGXML    , "GETCONFIGXML"     , XHCPcmd_GETCONFIGXML },

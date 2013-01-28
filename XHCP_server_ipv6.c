@@ -780,6 +780,43 @@ int XHCPcmd_LISTGLOBALS (int sockd, int argc, char **argv)
     return XHCP_EXE_SUCCESS;
 }
 
+int XHCPcmd_DELGLOBAL (int sockd, int argc, char **argv)
+{
+    node_t **globalsLst;
+    char buffer[XHCP_BUFFER_SZ];
+    int sz_buffer;
+    int nb;
+    
+    
+    
+    if (argc != 2)
+    {
+        XHCP_printXHCPResponse (sockd, RES_SYNTAXERR ); // Syntax Error
+        return XHCP_EXE_ERROR;
+    }
+    
+    sprintf (buffer, "//globals/global[@name='%s']", argv[1]);
+    
+    printf ("%s\n", buffer);
+    
+    if ( (globalsLst = roxml_xpath (rootConfig, buffer, &nb )) == NULL )
+        XHCP_printXHCPResponse (sockd, RES_NOSUCHGLO ); // No such global
+	else
+    {
+        
+        roxml_del_node (globalsLst[0]);
+
+		saveHal4lConfig (HAL4L_getConfigFile ());
+		loadHal4lConfig (HAL4L_getConfigFile ());
+	
+        XHCP_printXHCPResponse (sockd, RES_GLOVALDEL ); //233, "Global variable deleted" 
+    }
+    
+    
+    
+    return XHCP_EXE_SUCCESS;
+}
+
 int XHCPcmd_SETGLOBAL (int sockd, int argc, char **argv)
 {
 	if ( argc < 3 )

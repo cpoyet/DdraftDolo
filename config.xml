@@ -23,6 +23,7 @@
  <globals>
   <global name="varGlobal" value="2"/>
   <global name="toto" value="zaza"/>
+  <global name="hahaha" value="dqsfsd"/>
  </globals>
  <determinators>
   <determinator guid="ttcdt" name="toutes conditions" description="" IsGroup="N" enabled="Y">

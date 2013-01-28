@@ -7,6 +7,37 @@
 #include "xPLHal_common.h"
 #include "xPLHal4L.h"
 
+int isNum(char *c)
+{
+	int i;
+	int sz = strlen(c);
+	
+	for (i=0; i<sz; i++ )
+		if ( (c[i]<0 || c[i]>9) && c[i]!='.' && c[i] != '-')
+			return 0;
+	
+	return 1;
+}
+
+
+int compareGlobalStrings(char *va, char *op, char *globalValue)
+{
+	char *endVa, *endGlobalValue;
+	long valVa, valGlobalValue;
+	
+
+	if ( isNum(va) && isNum(globalValue) )
+	{
+		valVa = strtol(va, &endVa, 10);
+		valGlobalValue = strtol(globalValue, &endGlobalValue, 10);
+		return compareClockStrings(valVa, op, valGlobalValue);
+	}
+	else
+		if ( op[0] == '=' && strcasecmp(va,globalValue) == 0 )
+			return 1;
+			
+	return 0;
+}
 
 int compareClockStrings(int v1, char *op, int v2)
 {
@@ -256,7 +287,42 @@ int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
 	return ret;
 }
 
+int rules_verifGlobalConditions ( node_t *detNode, int anyRule, char *globalName)
+{
 
+    node_t **tCondLst;
+    int nbCondLst;
+
+	char nm[10], op[32], va[80];
+	int sz_nm, sz_op, sz_va;
+
+	int i;
+	int ret=0;
+
+    char *globalValue = getGlobal (globalName);
+
+	/* Liste des conditions */
+	tCondLst = roxml_xpath ( detNode, "descendant-or-self::globalCondition", &nbCondLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_verifGlobalConditions : %d globalCondition trouvées",nbCondLst);
+
+	for ( i=0; i<nbCondLst; i++)
+	{
+		/* On recupere les elements de la regle */
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "name", 0), nm, 10, &sz_nm );
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "operator", 0), op, 32, &sz_op );
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
+
+		ret = compareGlobalStrings(va, op, globalValue);
+
+		/* Sorite de la boucle dès qu'une condition est fausse */
+		if ( ret && anyRule )
+			return ret;
+		if ( !ret && !anyRule )
+			return ret;
+	}
+
+	return ret;
+}
 int rules_verifAllConditions(node_t *detNode, int type_event)
 {
 	return 0;

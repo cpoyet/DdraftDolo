@@ -1,0 +1,263 @@
+<!--
+   ***************************************
+   * xPL Determinator Specification
+   *
+   * Revision 0.9.1
+   *
+   * Copyright (C) 2004-2006 John Bent
+   *
+   ***************************************
+   -->
+   <xplDeterminator>   <!-- All xPL Determinator files must have <xplDeterminator> as their top-level element -->
+    
+    <!-- The <determinator> element is the container element for a determinator rule.
+   
+         The guid attribute specifies the GUID that uniquely identifies this determinator.
+         When a client creates a new determinator, it must omit the guid attribute (or specify it as an empty string), and the
+         server will fill it with an appropriate value when the determinator is submitted.
+   
+         The name attribute specifies the name of the determinator (see notes below on groups of determinators).
+         The description attribute specifies a more verbose description, and may be empty.
+         The enabled attribute contains either Y or N, and is used to specify whether the 
+         determinator should be executed when it's input conditions are true.
+   
+         The groupName attribute specifies whether this determinator belongs to a group.  
+         If it is an empty string, the determinator is placed at the top of the hierarchy.
+   
+         The isGroup attribute specifies whether this is a determinator, or a determinator group.
+         For normal determinators, it should be set to N.
+         For groups, it should be set to Y.
+         When specifying a determinator group, no input or output sections are required.
+         The name attribute should be used to specify the name of the group.
+         Group names can be hierarchical, using a slash (/) as the hierarchy separator.
+   
+    -->
+    <determinator
+       guid="rule-guid"
+       name="rule-name"
+       description="rule-description"
+       enabled="Y|N"
+       groupName="" 
+       isGroup="N">
+   
+     <input match="all|any">
+       <!-- The <input> section describes the conditions which must be true for the output section of this
+            determinator to be executed.
+       -->
+   
+       <!-- The <xplCondition> element is used to allow the rule to match specific xPL messages -->
+       <xplCondition
+         display_name="condition-name"
+         msg_type="cmnd|stat|trig|*"
+         source_vendor="vendor-name|*"
+         source_device="device-name|*"
+         source_instance="instance-name|*"
+         target_vendor="vendor-name|*"
+         target_device="device-name|*"
+         target_instance="instance-name|*"
+         schema_class="schema-class|*"
+         schema_type="schema-type|*">
+         <!-- One or more <param> elements may appear to allow matching on specific parameters within the body of a message -->
+         <param
+           name="parameter-name"
+           operator="=|!=|>|<|>=|<="
+           value="parameter-value"
+         />
+       </xplCondition>
+   
+       <!-- The <globalCondition> element allows rules to be executed based on the value of a global -->
+       <globalCondition
+         display_name="condition-name"
+         name="global-name"
+         operator="=|!=|>|<|>=|<="
+         value="global-value"
+       />
+   
+       <!-- The <globalChanged> condition causes a determinator to be executed
+            when the value of a global variable changes. 
+       -->
+       <globalChanged
+         display_name="rule-name"
+         name="global-name"
+       />
+   
+       <!-- The <dayCondition> restricts execution of a determinator to specific days of the week 
+        The dow parameter contains a 7-character string, representing the 7 days
+        of the week, with the first character representing Sunday.
+   
+        0 = do not execute on that day, 1 = execute on that day
+        For example, to execute on Monday to Friday, specify dow="0111110"
+   
+       -->
+       <dayCondition display_name="rule-name"
+        dow="0000000"
+       />
+   
+       <!-- The <timeCondition> element is used to determine whether the current time
+            matches a specific value.
+   
+     <!-- The less-than and greater-than signs need to be escaped to be valid XML -->
+   
+       <!-- Use this form for matching the 24-hour time -->
+       <timeCondition display_name="display-name"
+        category="time"
+        operator="=|!=|&lt;|&gt;|&lt;=|&gt;="
+        value="HH:mm"
+       />
+   
+       <!-- Use this form for matching a date -->
+       <timeCondition display_name="display-name"
+        category="date"
+        operator="=|!=|&lt;|&gt;|&lt;=|&gt;="
+        value="15 Mar 2000"
+       />
+   
+       <!-- Use this form for matching the day of the month -->
+       <timeCondition display_name="display-name"
+        category="day"
+        operator="=|!=|&lt;|&gt;|&lt;=|&gt;="
+        value="15"
+       />
+   
+       <!-- Use this form for matching the month -->
+       <timeCondition display_name="display-name"
+        category="month"
+        operator="=|!=|&lt;|&gt;|&lt;=|&gt;="
+        value="March"
+       />
+   
+       <!-- Use this form for matching the year -->
+       <timeCondition display_name="display-name"
+        category="year"
+        operator="=|!=|&lt;|&gt;|&lt;=|&gt;="
+        value="2000"
+       />
+   
+       <!-- The <x10Condition> element allows execution based on the state of an X10 device 
+   
+            NOTE: This condition is now deprecated, and new implementations are not required
+            to support it.
+       -->
+       <x10Condition display_name="rule-name"
+        device="x10-address"
+        state="ON|OFF"
+       />
+   
+     </input>
+   
+     <output>
+       <!-- The <output> section contains one or more actions that will be executed 
+            if the criteria in the <input> section evaluates to true
+   
+            The order in which the actions are executed is determined by
+            the value of the executeOrder attribute that is part of each action.
+            The executeOrder should be a numeric value, with the first action to be executed
+            having a value of 0, the next having a value of 1, and so on.
+            The order in which actions appear in the XML document is not important.
+       -->
+   
+       <logAction display_name="display-name"
+         logText="text to log" 
+         executeOrder="nnn"
+       />
+   
+       <!-- The <xplAction> element allows an xPL message to be sent.
+            The structure of the message is specified, with special replacement variables enclosed in curly braces.
+       -->
+       <xplAction display_name="action-name"
+        executeOrder="nnn"
+        msg_type="stat|trig|cmnd"
+        msg_target="*|v-d.i"
+        msg_schema="class.type">
+        <xplActionParam
+         expression="name=value"
+        />
+        <!-- If you wish to de-reference the value of a global,
+         you can enclose the name of the global in curly braces.
+         You can also use the following special replacement keywords (also enclosed in curly braces):
+         SYS::TIMESTAMP - this will be replaced by a date/time value in the format yyyymmddhhmmss.
+         SYS::DATE - the current date, in the form dd/mm/yyyy
+         SYS::DATE_UK -- dd/mm/yyyy (same as SYS::DATE)
+         SYS::DATE_US -- mm/dd/yyyy
+         SYS::DATE_YMD -- yyyy/mm/dd
+         SYS::TIME - the current time, in the form hh:mm:ss (24-hour clock)
+         SYS::DAY - the day of the month
+         SYS::MONTH - the current month (1 to 12)
+         SYS::YEAR - the current year (e.g. 2006)
+         SYS::HOUR - the current hour (24-hour format)
+         SYS::MINUTE - the current minute
+         SYS::SECOND - the current second
+   
+         If the determinator was triggered by reception of an xPL message,
+         you can also dereference elements from the message body, using 
+         the following format:
+   
+         {XPL::<element-name>[:index]}
+         Where <element-name> is the name of the parameter in the message body, and [index] is an optional
+         zero-based index to be used where multiple parameters with the same name exist.
+   
+        -->
+       </xplAction>
+   
+       <!-- The <globalAction> element allows you to set the value of a global variable 
+   
+            In addition to the usual embedding of global variables in the value attribute,
+            you can also append ++ or -- to the end of the value (outside the braces) to increment or
+            decrement the value respectively.
+       -->
+       <globalAction
+         display_name="action-name"
+         executeOrder="nnn"
+         name="global-name"
+         value="global-value"
+       />
+   
+       <delayAction
+        display_name="action-name"
+        executeOrder="nnn"
+        delay_seconds="period-in-seconds"
+       />
+   
+       <!-- The <stopAction> action halts execution of the current
+            determinator thread.
+       -->
+       <stopAction
+        display_name="rule-name"
+        executeOrder="nnn"
+       />
+   
+   
+       <suspendAction
+         display_name="rule-name"
+        executeOrder="nnn"
+         suspend_minutes="period-in-minutes"
+         suspend_time="absolute-time"
+         suspend_randomise="random-minutes"
+       />
+   
+       <!-- The <executeAction> action allows a program to be executed -->
+       <executeAction
+        display_name="action-name"
+        executeOrder="nnn"
+        program="program-name"
+        parameters="parameters"
+        wait="true|false"
+       />
+   
+       <!-- The <execRuleAction> action allows another rule to be executed -->
+       <execRuleAction
+        display_name="action-name"
+        executeOrder="nnn"
+        rule_name="rule-name"
+       />
+   
+       <!-- The <runScriptAction> allows a sub-routine to be executed on platforms that support scripting -->
+       <runScriptAction
+        display_name="action-name"
+        executeOrder="nnn"
+        script_name="subroutine-name"
+        parameters="optional-parameters"
+       />
+     </output>
+    </determinator>
+   </xplDeterminator>

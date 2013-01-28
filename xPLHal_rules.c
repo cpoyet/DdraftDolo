@@ -1,4 +1,3 @@
-
 #define _XPLHAL_RULES_C_
 
 #define _XOPEN_SOURCE 
@@ -44,7 +43,7 @@ int rules_executeActions(node_t *detNode)
 
 	/* Liste des actions */
 	tActLst = roxml_xpath ( detNode, "output/*", &nbActLst);
-	HAL4L_Debug(HAL4L_DEBUG,"rules_executeActions : %d actions trouvées",nbActLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_executeActions : %d actions trouvï¿½es",nbActLst);
 	
 	
 	qsort (tActLst, nbActLst, sizeof(node_t *), sortOrderAction);
@@ -182,7 +181,7 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 	
 	/* Liste des conditions */
 	tCondLst = roxml_xpath ( detNode, "descendant-or-self::timeCondition", &nbCondLst);
-	HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %d timeConditions trouvées",nbCondLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %d timeConditions trouvï¿½es",nbCondLst);
 
 	for ( i=0; i<nbCondLst; i++)
 	{				
@@ -210,7 +209,46 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 		roxml_release (RELEASE_LAST);
 		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %s -> %s", dn, ret?"OK":"NOK");*/
 		
-		/* Sorite de la boucle dès qu'une condition est fausse */
+		/* Sorite de la boucle dï¿½s qu'une condition est fausse */
+		if ( ret && anyRule )
+			return ret;
+		if ( !ret && !anyRule )
+			return ret;
+	}
+
+	return ret;
+}
+
+int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
+{
+	struct tm *tb;
+
+    	node_t **tCondLst;
+    	int nbCondLst;
+	char dow[8];
+	int sz_dow;
+	int i;
+	int ret=0;
+
+	struct tm *tb;    
+    	tb = localtime(time);
+
+	/* Liste des conditions */
+	tCondLst = roxml_xpath ( detNode, "descendant-or-self::dayCondition", &nbCondLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_verifdAYConditions : %d dayCondition trouvÃ©es",nbCondLst);
+
+	for ( i=0; i<nbCondLst; i++)
+	{				
+		/* On recupere les elements de la regle */
+		roxml_get_content ( roxml_get_attr (tCondLst[i], "dow", 0), dow, 8, &sz_dow );
+        
+        if ( sz_dow == 7 )
+            ret = dow[tb.tm_wday]=='1'?1:0;
+        else
+            ret = 0 ;
+    
+    
+		/* Sorite de la boucle dÃ¨s qu'une condition est fausse */
 		if ( ret && anyRule )
 			return ret;
 		if ( !ret && !anyRule )

@@ -221,17 +221,15 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 
 int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
 {
-	struct tm *tb;
-
-    	node_t **tCondLst;
-    	int nbCondLst;
+    node_t **tCondLst;
+    int nbCondLst;
 	char dow[8];
 	int sz_dow;
 	int i;
 	int ret=0;
 
 	struct tm *tb;    
-    	tb = localtime(time);
+    tb = localtime(time);
 
 	/* Liste des conditions */
 	tCondLst = roxml_xpath ( detNode, "descendant-or-self::dayCondition", &nbCondLst);
@@ -243,7 +241,7 @@ int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "dow", 0), dow, 8, &sz_dow );
         
         if ( sz_dow == 7 )
-            ret = dow[tb.tm_wday]=='1'?1:0;
+            ret = dow[tb->tm_wday]=='1'?1:0;
         else
             ret = 0 ;
     

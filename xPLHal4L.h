@@ -27,7 +27,7 @@
 
 //#include "./sqlite/sqlite3.h"
 
-#include "XHCP_server.h"
+#include "XHCP_server_ipv6.h"
 #include "xPLHal_scheduler.h"
 
 

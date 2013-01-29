@@ -131,7 +131,7 @@ xPL_Clock.c:
 		xPL_dispatchRawEvent
 		theMessage = parseMessage(messageBuff)
 		isHubEcho
-		xPL_dispatchMessageEvent  -> Envoi � tous les messages listeners du tableau messageListenerList
+		xPL_dispatchMessageEvent  -> Envoi à tous les messages listeners du tableau messageListenerList
 ---
 	xPL_handleServiceMessage 			/* Run the passed message by each service and see who is interested */
 		handleMessage 					/* Process a message and see if it applies to this service */
@@ -152,4 +152,51 @@ xPL_Logger.c
 	xPL_addServiceConfigChangedListener
 	xPL_setServiceEnabled
 	xPL_processMessages(-1)
+
+
+---
+Evénements
+	EV_XPLMESSAGE : Arrivée d'un message xPL
+		- Recherche de determinators possédant
+			- input match="any"
+			- une condition "xplCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Vérification que la condition est vérifiée avec le message en cours
+			=> Execution des actions
+		- Recherche de determinators possédant
+			- input match="all"
+			- une condition "xplCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Test de toutes les conditions
+			=> Si OK, alors execution des actions
+	EV_GLOBALCHANGED : Modification d'une variable globale
+		- Recherche de determinators possédant
+			- input match="any"
+			- une condition "globalChanged" avec attribut @name="le nom de la variable modifiée"
+			=> Execution des actions
+		- Recherche de determinators possédant
+			- input match="all"
+			- une condition "globalChanged" avec attribut @name="le nom de la variable modifiée"
+			=> Test de toutes les conditions
+			=> Si OK, alors execution des actions
+	EV_TIME : Tip horaire
+		- Recherche de determinators possédant
+			- input match="any"
+			- une condition "timeCondition" 
+			- ne possédant pas de condition "globalChanged"
+			=> Vérification que la condition est vérifiée avec la date/heure en cours
+			=> Execution des actions
+		- Recherche de determinators possédant
+			- input match="any"
+			- une condition "dayCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Vérification que l'attribut @dow possedant le flag du jour en cours à 1
+			=> Execution des actions
+		- Recherche de determinators possédant
+			- input match="all"
+			- une condition "timeCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Test de toutes les conditions
+			=> Si OK, alors execution des actions
+
 	

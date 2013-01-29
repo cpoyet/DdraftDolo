@@ -2,10 +2,11 @@
 
 #define _XOPEN_SOURCE 
 
+#include "xPLHal4L.h"
 #include "xPLHal_rules.h"
 #include "xPLHal_scheduler.h"
 #include "xPLHal_common.h"
-#include "xPLHal4L.h"
+
 
 int isNum(char *c)
 {
@@ -197,6 +198,49 @@ int sortOrderAction(void const *a, void const *b)
    return orderA - orderB;
 }
 
+int rules_verifXplConditions ( node_t *detNode, int anyRule, xPL_MessagePtr theMessage)
+{
+    node_t **tCondLst;
+    int nbCondLst;
+
+	char msg_type[9], source_vendor[9], source_device[9], source_instance[17], target_vendor[9], target_device[9], target_instance[17], schema_class[9], schema_type[9];
+	int sz_msg_type, sz_source_vendor, sz_source_device, sz_source_instance, sz_target_vendor, sz_target_device, sz_target_instance, sz_schema_class, sz_schema_type;
+
+	int i;
+	int ret=0;
+
+    char *globalValue;
+
+	/* Liste des conditions */
+	tCondLst = roxml_xpath ( detNode, "descendant-or-self::xplCondition", &nbCondLst);
+	HAL4L_Debug(HAL4L_DEBUG,"rules_verifXplConditions : %d xplCondition trouvées",nbCondLst);
+
+	for ( i=0; i<nbCondLst; i++)
+	{
+		/* On recupere les elements de la regle */
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "msg_type", 0),        msg_type,        8, &sz_msg_type );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "source_vendor", 0),   source_vendor,   8, &sz_source_vendor );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "source_device", 0),   source_device,   8, &sz_source_device );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "source_instance", 0), source_instance,16, &sz_source_instance );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "target_vendor", 0),   target_vendor,   8, &sz_target_vendor );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "target_device", 0),   target_device,   8, &sz_target_device );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "target_instance", 0), target_instance,16, &sz_target_instance );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "schema_class", 0),    schema_class,    8, &sz_schema_class );
+        roxml_get_content ( roxml_get_attr (tCondLst[i], "schema_type", 0),     schema_type,     8, &sz_schema_type );
+
+        
+        
+        
+		/* Sorite de la boucle dès qu'une condition est fausse */
+		if ( ret && anyRule )
+			return ret;
+		if ( !ret && !anyRule )
+			return ret;
+	}
+
+	return ret;
+}
+
 int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 {
     node_t **tCondLst;
@@ -250,7 +294,7 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 	return ret;
 }
 
-int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
+int rules_verifDayConditions ( node_t *detNode, int anyRule, int weekDay)
 {
     node_t **tCondLst;
     int nbCondLst;
@@ -258,9 +302,6 @@ int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
 	int sz_dow;
 	int i;
 	int ret=0;
-
-	struct tm *tb;    
-    tb = localtime(time);
 
 	/* Liste des conditions */
 	tCondLst = roxml_xpath ( detNode, "descendant-or-self::dayCondition", &nbCondLst);
@@ -272,7 +313,7 @@ int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "dow", 0), dow, 8, &sz_dow );
         
         if ( sz_dow == 7 )
-            ret = dow[tb->tm_wday]=='1'?1:0;
+            ret = dow[weekDay]=='1'?1:0;
         else
             ret = 0 ;
     
@@ -287,7 +328,7 @@ int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time)
 	return ret;
 }
 
-int rules_verifGlobalConditions ( node_t *detNode, int anyRule, char *globalName)
+int rules_verifGlobalConditions ( node_t *detNode, int anyRule)
 {
 
     node_t **tCondLst;
@@ -299,7 +340,7 @@ int rules_verifGlobalConditions ( node_t *detNode, int anyRule, char *globalName
 	int i;
 	int ret=0;
 
-    char *globalValue = getGlobal (globalName);
+    char *globalValue;
 
 	/* Liste des conditions */
 	tCondLst = roxml_xpath ( detNode, "descendant-or-self::globalCondition", &nbCondLst);
@@ -312,6 +353,7 @@ int rules_verifGlobalConditions ( node_t *detNode, int anyRule, char *globalName
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "operator", 0), op, 32, &sz_op );
 		roxml_get_content ( roxml_get_attr (tCondLst[i], "value", 0), va, 80, &sz_va );
 
+        globalValue = getGlobal (nm);
 		ret = compareGlobalStrings(va, op, globalValue);
 
 		/* Sorite de la boucle dès qu'une condition est fausse */

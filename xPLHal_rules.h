@@ -19,7 +19,7 @@ int compareGlobalStrings(char *va, char *op, char *globalValue);
 /* Macros ************************************************************************/
 
 /* Definitions de types **********************************************************/
-
+typedef enum _event_type { EV_XPLMESSAGE, EV_GLOBALCHANGED, EV_TIME } event_t;
 /* Prototypes ********************************************************************/
 
 
@@ -31,9 +31,9 @@ int compareGlobalStrings(char *va, char *op, char *globalValue);
 EXT_XPLHAL_RULES int rules_verifAllConditions(node_t *detNode, int type_event);
 EXT_XPLHAL_RULES int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time);
 EXT_XPLHAL_RULES int rules_executeActions(node_t *detNode);
-EXT_XPLHAL_RULES int rules_verifDayConditions ( node_t *detNode, int anyRule, time_t *time);
-EXT_XPLHAL_RULES int rules_verifGlobalConditions ( node_t *detNode, int anyRule, char *globalName);
-
+EXT_XPLHAL_RULES int rules_verifDayConditions ( node_t *detNode, int anyRule, int weekDay);
+EXT_XPLHAL_RULES int rules_verifGlobalConditions ( node_t *detNode, int anyRule);
+EXT_XPLHAL_RULES int rules_verifXplConditions ( node_t *detNode, int anyRule, xPL_MessagePtr theMessage);
 
 /* Variables globales ************************************************************/
 

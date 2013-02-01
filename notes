@@ -199,4 +199,4 @@ Evénements
 			=> Test de toutes les conditions
 			=> Si OK, alors execution des actions
 
-	
+//determinator/input[@match!='any']/ancestor::determinator[not(./input/globalChanged)]

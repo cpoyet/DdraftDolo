@@ -198,7 +198,7 @@ int sortOrderAction(void const *a, void const *b)
    return orderA - orderB;
 }
 
-int rules_verifXplConditions ( node_t *detNode, int anyRule, xPL_MessagePtr theMessage)
+int rules_verifXplConditions ( node_t *detNode, rule_t anyRule, xPL_MessagePtr theMessage)
 {
     node_t **tCondLst;
     int nbCondLst;
@@ -232,16 +232,16 @@ int rules_verifXplConditions ( node_t *detNode, int anyRule, xPL_MessagePtr theM
         
         
 		/* Sorite de la boucle dès qu'une condition est fausse */
-		if ( ret && anyRule )
+		if ( ret && anyRule==ANY_RULE )
 			return ret;
-		if ( !ret && !anyRule )
+		if ( !ret && anyRule==ALL_RULE )
 			return ret;
 	}
 
 	return ret;
 }
 
-int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
+int rules_verifTimeConditions ( node_t *detNode, rule_t anyRule, time_t *time)
 {
     node_t **tCondLst;
     int nbCondLst;
@@ -285,16 +285,16 @@ int rules_verifTimeConditions ( node_t *detNode, int anyRule, time_t *time)
 		HAL4L_Debug(HAL4L_DEBUG,"rules_verifTimeConditions : %s -> %s", dn, ret?"OK":"NOK");*/
 		
 		/* Sorite de la boucle d�s qu'une condition est fausse */
-		if ( ret && anyRule )
+		if ( ret && anyRule==ANY_RULE )
 			return ret;
-		if ( !ret && !anyRule )
+		if ( !ret && anyRule==ALL_RULE )
 			return ret;
 	}
 
 	return ret;
 }
 
-int rules_verifDayConditions ( node_t *detNode, int anyRule, int weekDay)
+int rules_verifDayConditions ( node_t *detNode, rule_t anyRule, int weekDay)
 {
     node_t **tCondLst;
     int nbCondLst;
@@ -319,16 +319,16 @@ int rules_verifDayConditions ( node_t *detNode, int anyRule, int weekDay)
     
     
 		/* Sorite de la boucle dès qu'une condition est fausse */
-		if ( ret && anyRule )
+		if ( ret && anyRule==ANY_RULE )
 			return ret;
-		if ( !ret && !anyRule )
+		if ( !ret && anyRule==ALL_RULE )
 			return ret;
 	}
 
 	return ret;
 }
 
-int rules_verifGlobalConditions ( node_t *detNode, int anyRule)
+int rules_verifGlobalConditions ( node_t *detNode, rule_t anyRule)
 {
 
     node_t **tCondLst;
@@ -357,9 +357,9 @@ int rules_verifGlobalConditions ( node_t *detNode, int anyRule)
 		ret = compareGlobalStrings(va, op, globalValue);
 
 		/* Sorite de la boucle dès qu'une condition est fausse */
-		if ( ret && anyRule )
+		if ( ret && anyRule==ANY_RULE )
 			return ret;
-		if ( !ret && !anyRule )
+		if ( !ret && anyRule==ALL_RULE )
 			return ret;
 	}
 
@@ -380,7 +380,7 @@ int compute_ev_xPLMessage (xPL_MessagePtr theMessage)
 	tDetLst = roxml_xpath ( rootConfig, "//determinator/input[@match='any']/ancestor::determinator[not(./input/globalChanged) && (./input/timeCondition)]", &nbDetLst);
 	for ( i=0; i<nbDetermLst; i++)
 	{
-		ret = rules_verifXplConditions ( tDetLst[i], 1, theMessage);
+		ret = rules_verifXplConditions ( tDetLst[i], ANY_RULE, theMessage);
 		if ( ret )
 			rules_executeActions(tDetLst[i]);
 	}
@@ -438,6 +438,71 @@ int compute_ev_globalChanged (char *variableName)
 			rules_executeActions(tDetLst[i]);
 	}
 
+	free(xpathString);
+	return 0;
+}
+
+int compute_ev_time (time_t *time)
+{
+    node_t **tDetLst;
+    int nbDetLst;
+	int i, ret;
+
+	char xpathFormat[] = "//determinator/input[@match='%s']/ancestor::determinator[not(./input/globalChanged) && (./input/%s)]";
+	char *xpathString;
+
+    struct tm *ts;
+	
+	xpathString = (char *) malloc (sizeof(char)*120);
+
+	/* Recherche de determinators possédant
+			- input match="any"
+			- une condition "timeCondition" 
+			- ne possédant pas de condition "globalChanged"
+			=> Vérification que la condition est vérifiée avec la date/heure en cours
+			=> Execution des actions*/
+	sprintf(xpathString, xpathFormat, "any", "timeCondition");
+	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		ret = rules_verifTimeConditions ( tDetLst[i], ANY_RULE, time);
+		if ( ret )
+			rules_executeActions(tDetLst[i]);
+	}
+
+	/* Recherche de determinators possédant
+			- input match="any"
+			- une condition "dayCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Vérification que l'attribut @dow possedant le flag du jour en cours à 1
+			=> Execution des actions*/
+	sprintf(xpathString, xpathFormat, "any", "dayCondition");
+	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
+	ts = localtime(&t);
+	
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		ret = rules_verifDayConditions ( tDetLst[i], ANY_RULE, ts.tm_wday)
+		if ( ret )
+			rules_executeActions(tDetLst[i]);
+	}
+
+	/* - Recherche de determinators possédant
+			- input match="all"
+			- une condition "timeCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Test de toutes les conditions
+			=> Si OK, alors execution des actions*/
+	sprintf(xpathString, xpathFormat, "all", "timeCondition");
+	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		ret = rules_verifAllConditions ( tDetLst[i] );
+		if ( ret )
+			rules_executeActions(tDetLst[i]);
+	}
+
+			
 	free(xpathString);
 	return 0;
 }

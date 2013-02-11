@@ -20,6 +20,8 @@ int compareGlobalStrings(char *va, char *op, char *globalValue);
 
 /* Definitions de types **********************************************************/
 typedef enum _event_type { EV_XPLMESSAGE, EV_GLOBALCHANGED, EV_TIME } event_t;
+typedef enum _rule_type { ALL_RULE, ANY_RULE } rule_t;
+
 /* Prototypes ********************************************************************/
 
 

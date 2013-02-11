@@ -78,7 +78,18 @@
    </output>
   </determinator>
   <determinator guid="327026c8-99d4-4634-b997-2c5af83e7269"/>
-  <determinator guid="toto"/>
+  <determinator guid="toto">
+   <input match="all">
+    <xplCondition display_name="1 xPL message" msg_type="trig" source_vendor="*" source_device="*" source_instance="*" target_vendor="*" target_device="*" target_instance="*" schema_class="test" schema_type="basic">
+     <param name="champ2 !" operator="=" value="2"/>
+     <param name="champ3" operator="=" value="2"/>
+    </xplCondition>
+    <globalCondition display_name="2 compare global variable" name="XPLHAL.MODE" operator="&lt;" value="2"/>
+    <globalChanged display_name="3 global variable changed" name="xplhal.mode"/>
+    <dayCondition display_name="4 execute days" dow="0111110"/>
+    <timeCondition display_name="5 Compare Datetime" category="time" operator="&lt;" value="23:22"/>
+   </input>
+  </determinator>
   <determinator name="vdfvgd" description="hahaha" groupName="" IsGroup="N" enabled="Y" guid="zaza">
    <input match="all">
     <timeCondition display_name="troisieme condition test" operator="&gt;" category="time" value="21:39"/>
@@ -89,3 +100,4 @@
   </determinator>
  </determinators>
 </xphal4l>
+

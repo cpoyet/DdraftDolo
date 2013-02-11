@@ -200,3 +200,5 @@ Evénements
 			=> Si OK, alors execution des actions
 
 //determinator/input[@match!='any']/ancestor::determinator[not(./input/globalChanged)]
+//determinator/input[@match!='any']/ancestor::determinator[not(./input/globalChanged) && (./input/timeCondition)]
+//determinator/input[@match='all']/ancestor::determinator[(./input/globalChanged[@name=''])]

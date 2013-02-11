@@ -365,6 +365,83 @@ int rules_verifGlobalConditions ( node_t *detNode, int anyRule)
 
 	return ret;
 }
+int compute_ev_xPLMessage (xPL_MessagePtr theMessage)
+{
+    node_t **tDetLst;
+    int nbDetLst;
+	int i, ret;
+
+	/* Recherche de determinators possédant
+			- input match="any"
+			- une condition "xplCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Vérification que la condition est vérifiée avec le message en cours
+			=> Execution des actions */
+	tDetLst = roxml_xpath ( rootConfig, "//determinator/input[@match='any']/ancestor::determinator[not(./input/globalChanged) && (./input/timeCondition)]", &nbDetLst);
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		ret = rules_verifXplConditions ( tDetLst[i], 1, theMessage);
+		if ( ret )
+			rules_executeActions(tDetLst[i]);
+	}
+
+	/* Recherche de determinators possédant
+			- input match="all"
+			- une condition "xplCondition"
+			- ne possédant pas de condition "globalChanged"
+			=> Test de toutes les conditions
+			=> Si OK, alors execution des actions */
+	tDetLst = roxml_xpath ( rootConfig, "//determinator/input[@match='all']/ancestor::determinator[not(./input/globalChanged) && (./input/timeCondition)]", &nbDetLst);
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		ret = rules_verifAllConditions ( tDetLst[i] );
+		if ( ret )
+			rules_executeActions(tDetLst[i]);
+	}
+
+	return 0;
+}
+
+int compute_ev_globalChanged (char *variableName)
+{
+    node_t **tDetLst;
+    int nbDetLst;
+	int i, ret;
+
+	char xpathFormat[] = "//determinator/input[@match='%s']/ancestor::determinator[(./input/globalChanged[@name='%s'])]";
+	char *xpathString;
+	
+	xpathString = (char *) malloc (sizeof(char)*(100 + strlen(variableName)));
+	
+	/* Recherche de determinators possédant
+			- input match="any"
+			- une condition "globalChanged" avec attribut @name="le nom de la variable modifiée"
+			=> Execution des actions*/
+	sprintf(xpathString, xpathFormat, "any", variableName);
+	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		rules_executeActions(tDetLst[i]);
+	}
+
+	/* Recherche de determinators possédant
+			- input match="all"
+			- une condition "globalChanged" avec attribut @name="le nom de la variable modifiée"
+			=> Test de toutes les conditions
+			=> Si OK, alors execution des actions */
+	sprintf(xpathString, xpathFormat, "all", variableName);
+	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
+	for ( i=0; i<nbDetermLst; i++)
+	{
+		ret = rules_verifAllConditions ( tDetLst[i] );
+		if ( ret )
+			rules_executeActions(tDetLst[i]);
+	}
+
+	free(xpathString);
+	return 0;
+}
+
 int rules_verifAllConditions(node_t *detNode, int type_event)
 {
 	return 0;

@@ -378,7 +378,7 @@ int compute_ev_xPLMessage (xPL_MessagePtr theMessage)
 			=> Vérification que la condition est vérifiée avec le message en cours
 			=> Execution des actions */
 	tDetLst = roxml_xpath ( rootConfig, "//determinator/input[@match='any']/ancestor::determinator[not(./input/globalChanged) && (./input/timeCondition)]", &nbDetLst);
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
 		ret = rules_verifXplConditions ( tDetLst[i], ANY_RULE, theMessage);
 		if ( ret )
@@ -392,7 +392,7 @@ int compute_ev_xPLMessage (xPL_MessagePtr theMessage)
 			=> Test de toutes les conditions
 			=> Si OK, alors execution des actions */
 	tDetLst = roxml_xpath ( rootConfig, "//determinator/input[@match='all']/ancestor::determinator[not(./input/globalChanged) && (./input/timeCondition)]", &nbDetLst);
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
 		ret = rules_verifAllConditions ( tDetLst[i] );
 		if ( ret )
@@ -419,7 +419,7 @@ int compute_ev_globalChanged (char *variableName)
 			=> Execution des actions*/
 	sprintf(xpathString, xpathFormat, "any", variableName);
 	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
 		rules_executeActions(tDetLst[i]);
 	}
@@ -431,7 +431,7 @@ int compute_ev_globalChanged (char *variableName)
 			=> Si OK, alors execution des actions */
 	sprintf(xpathString, xpathFormat, "all", variableName);
 	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
 		ret = rules_verifAllConditions ( tDetLst[i] );
 		if ( ret )
@@ -463,7 +463,7 @@ int compute_ev_time (time_t *time)
 			=> Execution des actions*/
 	sprintf(xpathString, xpathFormat, "any", "timeCondition");
 	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
 		ret = rules_verifTimeConditions ( tDetLst[i], ANY_RULE, time);
 		if ( ret )
@@ -478,11 +478,11 @@ int compute_ev_time (time_t *time)
 			=> Execution des actions*/
 	sprintf(xpathString, xpathFormat, "any", "dayCondition");
 	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
-	ts = localtime(&t);
+	ts = localtime(time);
 	
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
-		ret = rules_verifDayConditions ( tDetLst[i], ANY_RULE, ts.tm_wday)
+		ret = rules_verifDayConditions ( tDetLst[i], ANY_RULE, ts->tm_wday);
 		if ( ret )
 			rules_executeActions(tDetLst[i]);
 	}
@@ -495,7 +495,7 @@ int compute_ev_time (time_t *time)
 			=> Si OK, alors execution des actions*/
 	sprintf(xpathString, xpathFormat, "all", "timeCondition");
 	tDetLst = roxml_xpath ( rootConfig, xpathString, &nbDetLst);
-	for ( i=0; i<nbDetermLst; i++)
+	for ( i=0; i<nbDetLst; i++)
 	{
 		ret = rules_verifAllConditions ( tDetLst[i] );
 		if ( ret )
@@ -507,7 +507,7 @@ int compute_ev_time (time_t *time)
 	return 0;
 }
 
-int rules_verifAllConditions(node_t *detNode, int type_event)
+int rules_verifAllConditions(node_t *detNode)
 {
 	return 0;
 }

@@ -52,8 +52,46 @@ cellpadding=\"2\" cellspacing=\"2\">\
 style=\"font-family: monospace;\">&nbsp;xPLHal4L.foxg20\
 (Linux/armv5tejl) Version 0.0.1 XHCP 1.5 ready<br>\
 </span><br>\
-</td>\
-</tr>\
+</td></tr>\
+<tr>\
+<td style=\"vertical-align: top; \">\
+<form style=\"height: 74px;\" enctype=\"text/plain\" method=\"post\" action=\"\" name=\"xplhal_input\">\
+<input name=\"cmd\" size=\"64\"><button>Enter</button>\
+</td></tr>\
+<tr>\
+<td style=\"vertical-align: top; \">\
+</td></tr>\
+</form>\
+</tbody>\
+</table>\
+<br>\
+</body>\
+</html>"
+
+#define XPLHAL_ROOT_PAGE_HEAD "<html>\
+<head>\
+<meta content=\"text/html; charset=ISO-8859-1\"\
+http-equiv=\"content-type\">\
+<title></title>\
+</head>\
+<body>\
+<table style=\"text-align: left; width: 774px; height: 449px;\" border=\"1\"\
+cellpadding=\"2\" cellspacing=\"2\">\
+<tbody>\
+<tr>\
+<td style=\"vertical-align: top; height: 10px;\"><span\
+style=\"font-family: monospace;\">&nbsp;xPLHal4L.foxg20\
+(Linux/armv5tejl) Version 0.0.1 XHCP 1.5 ready<br>\
+</span><br>\
+</td></tr>\
+<tr>\
+<td style=\"vertical-align: top; \">\
+<form style=\"height: 74px;\" enctype=\"text/plain\" method=\"post\" action=\"\" name=\"xplhal_input\">\
+<input name=\"cmd\" size=\"64\"><button>Enter</button>\
+<br>"
+
+#define XPLHAL_ROOT_PAGE_TRAIL "</td></tr>\
+</form>\
 </tbody>\
 </table>\
 <br>\
@@ -400,23 +438,48 @@ int processHttpRequest(int sockd, char *buffer)
 {
     char *sep = "\n";
     char *line, *brkt;
+	char *commande=NULL;
     char *responseBuffer=NULL;
+	
+	char *header = XPLHAL_ROOT_PAGE_HEAD;
+	char *footer = XPLHAL_ROOT_PAGE_TRAIL;
 
 
-	for (line = strtok_r(buffer, sep, &brkt); line; line = strtok_r(NULL, sep, &brkt))
-	{
-		responseBuffer = addBuffer (responseBuffer, line);
-		printf("Ligne HTTP : [%s]\n",line);
-	}
-	printf("Buffer : %i car. [%s]\n",strlen(responseBuffer), responseBuffer);
+	//for (line = strtok_r(buffer, sep, &brkt); line; line = strtok_r(NULL, sep, &brkt))
+	//{
+		//responseBuffer = addBuffer (responseBuffer, line);
+		//printf("Ligne HTTP : [%s]\n",line);
+	//}
+	//printf("Buffer : %i car. [%s]\n",strlen(responseBuffer), responseBuffer);
 	//responseBuffer = "coucou xPLHal est là !!";
 	//XHCP_print (sockd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %i\r\n\r\n%s",strlen(responseBuffer),responseBuffer);
 	
-	responseBuffer = XPLHAL_ROOT_PAGE;
+	for (line = strtok_r(buffer, sep, &brkt); line; line = strtok_r(NULL, sep, &brkt))
+	{
+		printf("Ligne HTTP : [%s]\n",line);
+		if ( strncmp("cmd=",line,4) == 0)
+		{
+			commande = strdup(line+4);
+			printf("OK cmd trouvé !! [%s]",commande);
+		}
+	}
+
+	//responseBuffer = XPLHAL_ROOT_PAGE;
 	
+	if ( commande == NULL )
+		commande=strdup("");
+
+	int size = strlen(header) + strlen (footer) + strlen (commande) +10;
+	printf("Size = %i\n");
+	responseBuffer = malloc (size);
+
+	sprintf(responseBuffer,"%s%s%s", header, commande, footer);
+
 	Writeline (sockd, responseBuffer, strlen(responseBuffer));
 
-	//free(responseBuffer);
+
+	if ( responseBuffer != NULL ) free(responseBuffer);
+	if ( commande != NULL ) free(commande);
 	return 0;
 }
 

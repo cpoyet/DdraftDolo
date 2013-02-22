@@ -137,8 +137,9 @@ void timeEvent(time_t *time)
 		anyRule = ! strcasecmp(rule,"any");
 
 		//ret = rules_verifTimeConditions( determLst[i], anyRule, tickDate, tickYear, tickMonth, tickDay, tickTime);
-		ret = rules_verifTimeConditions( determLst[i], anyRule, time);
+		//ret = rules_verifTimeConditions( determLst[i], anyRule, time);
 
+		
 		if ( ret ) 
 		{
 			printf ("Le derterminator doit être executé\n");
@@ -193,7 +194,8 @@ void internalMessageHandler(xPL_MessagePtr theMessage, xPL_ObjectPtr userValue)
 			
 			epoch   = atol (xPL_getMessageNamedValue(theMessage, "epoch"));
 			
-			timeEvent( &epoch);
+			//timeEvent( &epoch);
+			compute_ev_time (&epoch);
 			
 			printf("heure %s => %d\n", timeStr, tickTime);
 			printf("tickMonth=%d tickDate=%d tickDay=%d tickYear=%d tickTime=%d epoch=%d\n", tickMonth, tickDate, tickDay, tickYear, tickTime, epoch );
